@@ -8,8 +8,6 @@ _OPS = {
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
     ast.Div: operator.truediv,
-    ast.Mod: operator.mod,
-    ast.Pow: operator.pow,
     ast.USub: operator.neg,
     ast.UAdd: operator.pos,
 }
@@ -35,7 +33,7 @@ def _eval(node):
 
 
 def handle(slots, ctx):
-    text = slots.get("expression", "").lower()
+    text = (slots.get("expression") or "").lower()
     for word, symbol in _WORDS.items():
         text = text.replace(word, symbol)
     # Pull out the longest run of math characters, dropping words like "what is".
@@ -44,7 +42,7 @@ def handle(slots, ctx):
     try:
         tree = ast.parse(math, mode="eval")
         result = _eval(tree.body)
-    except (ValueError, SyntaxError, ZeroDivisionError, TypeError):
+    except (ValueError, SyntaxError, ZeroDivisionError, TypeError, OverflowError, RecursionError):
         return "I couldn't work that out."
     if isinstance(result, float) and result.is_integer():
         result = int(result)
