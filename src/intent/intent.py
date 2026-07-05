@@ -16,7 +16,7 @@ def decide_action(query):
     q = query.lower()
     if "time" in q and ("what" in q or "tell" in q):
         return ("TIME", {})
-    if "date" in q or "what day" in q:
+    if "the date" in q or "what day" in q:
         return ("DATE", {})
     if "timer" in q:
         return ("TIMER", {"duration": _parse_duration(q)})
