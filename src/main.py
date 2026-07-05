@@ -3,9 +3,11 @@ from audio.stt import transcribe
 from intent.intent import decide_action
 from utils.utils import tell_time, end_timer, set_timer
 
+print("JANET is running. Press Ctrl-C to quit.")
+
 while True:
-    file = record()
-    query = transcribe(file)
-    print(query)
+    audio = record()
+    query = transcribe(audio)
+    print(f"🗣  You said: {query.strip()}")
     action = decide_action(query)
-    print(action)
+    print(f"⚙️  Action: {action}")
