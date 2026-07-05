@@ -345,7 +345,8 @@ def _parse_duration(query):
 
 def decide_action(query):
     q = query.lower()
-    if "time" in q and ("what" in q or "tell" in q):
+    # \btime\b so the multiplication word "times" (and "timer") don't match TIME.
+    if re.search(r"\btime\b", q) and ("what" in q or "tell" in q):
         return ("TIME", {})
     if "the date" in q or "what day" in q:
         return ("DATE", {})
