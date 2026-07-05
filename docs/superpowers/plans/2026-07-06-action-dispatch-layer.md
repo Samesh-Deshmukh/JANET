@@ -288,7 +288,7 @@ from actions.calc_action import handle
 print(handle({'expression': '12 times 4'}, None))
 print(handle({'expression': 'what is 3 plus 4'}, None))
 print(handle({'expression': '10 divided by 4'}, None))
-print(handle({'expression': '__import__(1)'}, None))
+print(handle({'expression': 'os.system(\"ls\")'}, None))
 "
 ```
 Expected:
@@ -298,6 +298,7 @@ That's 7.
 That's 2.5.
 I couldn't work that out.
 ```
+(Safety note: the AST evaluator only accepts numeric `Constant`/`BinOp`/`UnaryOp` nodes, so any call/name — e.g. `os.system(...)` or `__import__("os").system(...)` — is rejected and nothing executes. An input like `__import__(1)` has its letters stripped to `(1)` and evaluates to `1` — harmless, since no import ever runs.)
 
 - [ ] **Step 4: Commit**
 
