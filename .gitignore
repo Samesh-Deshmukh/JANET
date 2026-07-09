@@ -23,3 +23,7 @@ venv/
 .vscode/
 .tests/
 tests/
+.Notes/
+Notes/
+CLAUDE.md
+.claude/
