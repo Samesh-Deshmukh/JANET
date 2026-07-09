@@ -1,0 +1,20 @@
+# Enforce consistent line endings so editors (e.g. PyCharm on Windows/Linux)
+# can't silently rewrite files to CRLF and create phantom diffs.
+#
+# `text=auto` -> git decides which files are text and normalizes them.
+# `eol=lf`     -> text files are stored AND checked out with LF everywhere.
+* text=auto eol=lf
+
+# Be explicit for the file types we actually ship.
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.cfg   text eol=lf
+*.toml  text eol=lf
+
+# Audio/binary assets must never be line-ending normalized.
+*.wav   binary
+*.mp3   binary
+*.mp4   binary
+*.png   binary
+*.jpg   binary
