@@ -74,13 +74,18 @@ def _read_wav_16k(path):
     already uses for the mic's 44.1k -> 16k resample.
     """
     rate, data = wavfile.read(path)
-    if data.ndim > 1:              # stereo -> mono by averaging channels
-        data = data.mean(axis=1)
+    # Normalize dtype FIRST, on the raw array: for a stereo int wav, averaging
+    # channels first would upcast to float64 and skip the integer branch, leaking
+    # ±32767 magnitudes through. So scale to [-1, 1] here, then downmix.
     if np.issubdtype(data.dtype, np.integer):
-        # normalize by the dtype's full range, e.g. int16 -> [-1, 1]
-        data = data.astype(np.float32) / np.iinfo(data.dtype).max
+        # int16 divides by 32768.0 to match audio.py's MAX_INT16 convention;
+        # other int widths use their own full-scale value.
+        full_scale = 32768.0 if data.dtype == np.int16 else float(np.iinfo(data.dtype).max)
+        data = data.astype(np.float32) / full_scale
     else:
         data = data.astype(np.float32)
+    if data.ndim > 1:              # stereo -> mono by averaging channels
+        data = data.mean(axis=1).astype(np.float32)
     if rate != TARGET_RATE:
         data = resample_poly(data, TARGET_RATE, rate).astype(np.float32)
     return data
