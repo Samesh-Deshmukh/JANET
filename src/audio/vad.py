@@ -10,6 +10,7 @@ recording — deterministic, no mic needed.
 """
 import sys
 import numpy as np
+import torch
 from scipy.io import wavfile
 from scipy.signal import resample_poly
 from silero_vad import load_silero_vad, VADIterator
@@ -47,7 +48,6 @@ class SpeechDetector:
 
     def process(self, frame):
         """Feed one 512-sample float32 frame. Returns 'start', 'end', or None."""
-        import torch
         frame = np.asarray(frame, dtype=np.float32)
         out = self._it(torch.from_numpy(frame), return_seconds=True)
         if out is None:
