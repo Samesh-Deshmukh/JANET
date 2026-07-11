@@ -8,6 +8,7 @@
 # --- Speech-to-text (OpenAI Whisper, GPU-accelerated) ---
 torch==2.11.0+cu128
 openai-whisper==20250625
+silero-vad==5.1.2        # LSTM voice-activity detection; model caches locally after first run
 
 # --- Audio I/O & text-to-speech ---
 PyAudio==0.2.14
