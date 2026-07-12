@@ -8,14 +8,17 @@
 # --- Speech-to-text (OpenAI Whisper, GPU-accelerated) ---
 torch==2.11.0+cu128
 openai-whisper==20250625
+silero-vad==5.1.2        # LSTM voice-activity detection; model caches locally after first run
 
 # --- Audio I/O & text-to-speech ---
 PyAudio==0.2.14
 sounddevice==0.5.5
 wavio==0.0.9
 pyttsx3==2.99            # Linux TTS also needs the system package: espeak-ng
-keyboard==0.13.5         # push-to-talk; NOTE: on Linux this requires running as root
-pynput==1.8.2            # root-free alternative to `keyboard` under X11
+# NOTE: as of Block 2 (always-listening VAD) capture no longer uses push-to-talk.
+# keyboard/pynput remain legacy/unused; evdev + utils/hotkey.py are kept but dormant.
+keyboard==0.13.5         # legacy push-to-talk (unused since Block 2); needed root on Linux
+pynput==1.8.2            # legacy root-free alternative to `keyboard` under X11 (unused since Block 2)
 
 # --- ML / data ---
 numpy==2.2.6

@@ -14,7 +14,7 @@ def _get_model():
 
 
 def transcribe(audio):
-    # `audio` is a float32 numpy array at 16 kHz (from record()); Whisper also accepts a file path.
+    # `audio` is a float32 numpy array at 16 kHz (from the always-listening loop); Whisper also accepts a file path.
     print("📝 Transcribing...")
     result = _get_model().transcribe(audio)
     return result["text"]
