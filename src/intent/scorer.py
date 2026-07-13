@@ -30,17 +30,26 @@ _QUESTION_WORDS = {
     "is", "are", "am", "was", "were", "do", "does", "did",
     "can", "could", "will", "would", "should", "has", "have",
 }
+# Imperative verbs. Detected only at the HEAD (see _head_word), which is what
+# separates a command TO JANET ("reply to that email") from a statement ABOUT the
+# thing ("i need to reply to that email") — the head is the verb only in the
+# former. Kept intent-specific; generic verbs (get/make/call) are left out
+# because they head many person-directed sentences, and the classifier's NONE
+# class is the backstop for anything that slips through.
 _COMMAND_WORDS = {
     "turn", "set", "play", "remind", "tell", "start", "stop", "cancel", "add",
     "open", "close", "lock", "unlock", "wake", "mute", "dim", "switch", "show",
     "give", "send", "read", "check", "schedule", "pause", "resume", "delete",
     "remove", "snooze", "create", "calculate",
+    # added after real-hardware testing (were missing -> clear commands ignored):
+    "reply", "forward", "compose", "write", "draft", "book", "reschedule",
+    "convert", "compute", "solve", "repeat", "email", "list",
 }
 # Words tied to things JANET actually does — evidence it's a real request for it.
 _TASK_KEYWORDS = {
     "time", "date", "day", "timer", "alarm", "remind", "reminder", "weather",
-    "forecast", "temperature", "light", "lights", "thermostat", "email",
-    "calendar", "meeting", "appointment", "calculate", "news",
+    "forecast", "temperature", "light", "lights", "thermostat", "email", "mail",
+    "message", "inbox", "calendar", "meeting", "appointment", "calculate", "news",
 }
 # Skipped when finding the "head" word, so "hey janet what time…" still reads as a
 # question. (The +50 janet points come from the substring check, not the head.)
