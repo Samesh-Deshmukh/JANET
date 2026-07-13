@@ -31,6 +31,8 @@ def _handle(utterance):
         return                      # Whisper heard nothing intelligible; stay quiet
     ctx = Context(speak=say, query=query)
     reply = respond(query, ctx)
+    if reply is None:
+        return                          # not addressed / not for JANET — stay silent
     print(f"⚙️  Reply: {reply}")
     say(reply)
 
