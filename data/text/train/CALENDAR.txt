@@ -94,3 +94,9 @@ how does my day look tomorrow
 is there room on my calendar for a call
 find an opening for a meeting this week
 whats after my next meeting
+# digit forms (whisper often emits numerals)
+am i free at 3 tomorrow
+add a meeting at 12 on friday
+cancel my 2 oclock
+whats on my calendar on the 5th
+schedule a call at 4 pm

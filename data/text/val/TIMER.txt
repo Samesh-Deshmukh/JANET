@@ -22,3 +22,6 @@ timer for seven minutes
 timer for the toast two minutes
 timer for twenty five minutes
 whats the status of my timers
+# digit forms (whisper often emits numerals)
+start a 15 minute timer
+set a timer for 3 minutes

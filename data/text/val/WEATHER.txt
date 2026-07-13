@@ -22,3 +22,6 @@ is it chilly this morning
 check the weather for tomorrow
 tell me the weather for this weekend
 whats the weather supposed to be like next week
+# digit forms (whisper often emits numerals)
+will it be over 100 tomorrow
+is it below 40 right now

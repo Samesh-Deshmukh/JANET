@@ -4,6 +4,7 @@
 Run: python data/text/validate.py   (exit 0 = ok, 1 = violations)
 Standalone: stdlib only, no src imports, resolves paths from its own location.
 """
+import itertools
 import sys
 from pathlib import Path
 
@@ -33,6 +34,15 @@ def main():
     labels = load_labels()
     problems = []
     counts = {}
+    label_all = {}  # label -> set of all its utterances (both splits), for cross-label checks
+
+    # Stray-file check: any LABEL.txt whose name isn't in labels.txt is unlabelled data.
+    known = set(labels)
+    for split in SPLITS:
+        for f in sorted((HERE / split).glob("*.txt")):
+            if f.stem not in known:
+                problems.append(f"{split}/{f.name}: file not in labels.txt (unknown label)")
+
     for label in labels:
         per_split = {}
         for split in SPLITS:
@@ -55,6 +65,13 @@ def main():
         if overlap:
             problems.append(f"{label}: {len(overlap)} line(s) in BOTH train and val, e.g. {sorted(overlap)[:3]}")
         counts[label] = (len(per_split["train"]), len(per_split["val"]))
+        label_all[label] = set(per_split["train"]) | set(per_split["val"])
+
+    # Cross-label check: the same utterance under two labels is a labelling conflict.
+    for a, b in itertools.combinations(labels, 2):
+        clash = label_all[a] & label_all[b]
+        if clash:
+            problems.append(f"{a} vs {b}: {len(clash)} line(s) under BOTH labels, e.g. {sorted(clash)[:3]}")
 
     print(f"{'label':<12}{'train':>8}{'val':>8}{'total':>8}")
     t_tr = t_va = 0
@@ -70,7 +87,7 @@ def main():
         for p in problems[:50]:
             print(f"  - {p}", file=sys.stderr)
         sys.exit(1)
-    print("\nOK: format contract satisfied, train/val disjoint.")
+    print("\nOK: format contract satisfied, train/val disjoint, labels mutually exclusive.")
 
 
 if __name__ == "__main__":

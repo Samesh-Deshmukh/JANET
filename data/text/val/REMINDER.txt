@@ -22,3 +22,6 @@ remind me to take out the recycling
 remind me when i get home to feed the dog
 set a reminder to renew my license
 whats on my reminder list
+# digit forms (whisper often emits numerals)
+remind me in 30 minutes to stretch
+remind me at 8 to lock up

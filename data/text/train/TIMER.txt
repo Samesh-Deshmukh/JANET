@@ -94,3 +94,10 @@ timer for three hours
 timer for two minutes
 whats left on the timer
 whats my timer at
+# digit forms (whisper often emits numerals)
+set a timer for 5 minutes
+start a 10 minute timer
+timer for 90 seconds
+give me a 20 minute timer
+set a 2 hour timer
+timer for 45 seconds

@@ -94,3 +94,9 @@ what did i ask you to remind me about
 what do i have to remember today
 what reminders are coming up
 what reminders do i have today
+# digit forms (whisper often emits numerals)
+remind me in 20 minutes to check the oven
+remind me at 6 to call mom
+set a reminder for 3 pm
+remind me in 2 hours to leave
+remind me on the 15th about rent

@@ -22,3 +22,6 @@ is tomorrow a busy day
 add lunch with mike to my calendar
 how does my afternoon look
 is my next meeting still on
+# digit forms (whisper often emits numerals)
+am i busy at 10 tomorrow
+when is my 9 am meeting

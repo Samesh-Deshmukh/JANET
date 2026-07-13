@@ -94,3 +94,10 @@ what time is my alarm set for
 whats my earliest alarm
 whats my next alarm
 when is my next alarm
+# digit forms (whisper often emits numerals)
+set an alarm for 7 am
+wake me up at 6 30
+alarm for 8 15
+set an alarm for 5 45 am
+wake me at 9
+alarm for 10 pm

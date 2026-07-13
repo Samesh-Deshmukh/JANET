@@ -94,3 +94,7 @@ tell me if i need an umbrella tomorrow
 tell me if its going to rain today
 is there a heat advisory today
 is there a frost warning tonight
+# digit forms (whisper often emits numerals)
+is it going to be above 90 today
+will it drop below 32 tonight
+is it 80 degrees out

@@ -22,3 +22,6 @@ wake me up at midnight
 wake me up at six thirty
 wake me up before my flight
 what alarms do i have set
+# digit forms (whisper often emits numerals)
+set an alarm for 6 am
+wake me up at 7 30
