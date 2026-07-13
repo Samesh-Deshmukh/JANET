@@ -1,0 +1,104 @@
+# plain arithmetic
+whats twelve times eight
+what is three hundred forty seven divided by nineteen
+whats seven plus fifteen
+what is nine minus four
+how much is twenty three plus fifty six
+whats four hundred times six
+what is one thousand divided by eight
+work out sixteen times sixteen
+whats nine times nine
+calculate two hundred divided by five
+what is eleven times twelve
+whats sixty four divided by eight
+can you compute fifteen plus twenty seven
+whats 45 plus 78
+what is 128 divided by 4
+calculate 99 minus 37
+how much is 7 times 6
+whats 13 times 13
+what is 1000 minus 456
+add thirty seven and forty five
+divide ninety by six
+# order of operations
+three times five plus two
+what is four plus six times two
+calculate two plus three times four minus one
+whats ten minus two times three
+work out five plus five times five
+what is eight divided by two plus three
+how much is two times three plus four times five
+calculate nine minus three times two plus one
+whats seven plus eight divided by two
+what is six times two minus four plus one
+# powers roots squares
+what is two to the power of ten
+whats five squared plus seven x
+the square root of forty nine
+whats the cube root of twenty seven
+what is three to the power of four
+calculate ten squared
+whats the square root of one hundred forty four
+what is two cubed
+how much is four to the power of three
+whats the square root of eighty one
+calculate seven squared minus one
+what is six to the power of two
+whats the fourth root of sixteen
+what is the square root of two
+calculate eight to the power of zero
+# fractions percentages
+add one half and two thirds
+calculate fifteen percent of two hundred
+whats seven eighths as a decimal
+how much is a third of ninety
+what is twenty percent of eighty
+calculate three quarters of sixty
+whats one half plus one quarter
+what is forty percent of five hundred
+add two fifths and one fifth
+whats sixty percent of ninety
+calculate one tenth of two hundred
+what is five sixths minus one sixth
+simplify six over eight
+convert three eighths to a decimal
+what percent of eighty is twenty
+how much is ten percent of fifty
+# algebra
+solve two x plus three equals nine
+what is the value of x if three x equals twelve
+whats x if x plus five equals eleven
+solve for x in four x minus two equals ten
+what is x when two x equals sixteen
+solve three x plus one equals seven
+whats the value of y if y minus four equals nine
+solve for x if five x equals twenty five
+what is x squared if x equals four
+solve two x minus five equals fifteen
+whats x plus y if x is three and y is seven
+solve for n if n over two equals six
+# calculus
+whats the derivative of x squared
+integrate x cubed
+what is the derivative of two x plus three
+calculate the integral of x squared
+whats the derivative of sine of x
+what is the limit of x squared as x approaches two
+find the derivative of x to the power of four
+whats the second derivative of x cubed
+integrate two x plus one
+what is the derivative of e to the x
+# misc math
+what is nine factorial
+what is log base two of eight
+calculate log base ten of a hundred
+convert forty miles to kilometers
+whats the area of a circle with radius four
+convert two hundred pounds to kilograms
+what is the perimeter of a square with side five
+calculate the area of a rectangle six by four
+convert ten celsius to fahrenheit
+whats the volume of a cube with side three
+what is the hypotenuse of a triangle with sides three and four
+whats the average of ten twenty and thirty
+calculate the mean of four six and eight

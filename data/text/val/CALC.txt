@@ -1,0 +1,31 @@
+# plain arithmetic
+whats eight plus nineteen
+what is fourteen times three
+how much is 250 minus 88
+calculate sixty divided by four
+# order of operations
+whats four times three plus six
+what is ten plus four divided by two
+calculate five minus two times three plus one
+# powers roots squares
+what is the square root of sixteen
+whats seven to the power of two
+calculate the cube root of eight
+what is nine squared
+# fractions percentages
+whats twenty five percent of sixty
+add three quarters and one eighth
+what is a quarter of forty four
+calculate two thirds of ninety
+# algebra
+solve for x if two x plus four equals fourteen
+whats y if y minus three equals eight
+what is x if x divided by two equals five
+# calculus
+whats the derivative of three x squared
+integrate x to the power of four
+what is the derivative of cosine of x
+# misc math
+what is six factorial
+convert twenty kilometers to miles
+whats the area of a triangle with base six and height four
