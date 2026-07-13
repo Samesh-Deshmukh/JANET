@@ -1,0 +1,96 @@
+alarm for noon
+alarm for one am
+alarm for quarter past eight
+alarm for quarter to ten
+alarm for two fifteen
+cancel the recurring alarm
+change my alarm sound
+check if my alarm is on
+check my alarms
+delete all my weekend alarms
+delete my afternoon alarm
+delete my nine am alarm
+disable the weekend alarm
+dismiss the alarm
+do i have an alarm for tomorrow
+do i have any alarms set for the morning
+enable the weekday alarm
+give me a heads up alarm before my meeting
+hey janet delete my alarm
+hey janet set a recurring alarm for weekdays
+hey janet set an alarm for seven am
+hey janet what alarms do i have
+how many alarms are set right now
+is my alarm set correctly
+janet change my alarm to seven
+janet set an alarm for eight
+janet turn off my alarm
+janet wake me in an hour
+janet wake me up at six
+kill the alarm
+list my alarms
+make my alarm repeat every weekday
+make the alarm louder
+move my alarm to eight
+pause my alarms for the week
+set a backup alarm for seven thirty
+set a daily alarm for six thirty
+set a one time alarm for six am
+set a recurring alarm for every weekday at six
+set a recurring alarm for mondays at seven
+set a recurring alarm for tuesdays and thursdays at seven
+set a recurring alarm for weekdays at seven
+set a recurring alarm for weekends at nine
+set a recurring weekend alarm for nine
+set a repeating alarm for weekdays at six thirty
+set a smart alarm before my next meeting
+set an alarm an hour before my first call
+set an alarm before my dentist appointment
+set an alarm before my flight lands
+set an alarm for early tomorrow
+set an alarm for eight am
+set an alarm for eleven pm
+set an alarm for late tonight
+set an alarm for nine pm
+set an alarm for one hour before my flight
+set an alarm for quarter past six
+set an alarm for seven am
+set an alarm for seven on sunday
+set an alarm for six am
+set an alarm for six on saturday
+set an alarm for ten am
+set an alarm for twenty past seven
+set an alarm for two hours before my first meeting
+set an alarm one hour before my first appointment
+set an alarm only for tomorrow
+set an alarm relative to my calendar
+set an alarm two hours before my meeting
+set my alarm sound to something softer
+shut off the alarm
+silence the alarm
+snooze
+snooze for ten more minutes
+snooze it for five more minutes
+snooze the alarm
+turn my alarms back on
+turn off all my alarms
+turn off my alarm
+turn off the alarm please
+turn off the morning alarm
+turn off the recurring alarm
+update my alarm to six forty five
+wake me an hour before my train
+wake me in eight hours
+wake me in five hours
+wake me in four hours
+wake me in ninety minutes
+wake me in six hours
+wake me in three hours
+wake me up at five thirty
+wake me up at four am
+wake me up at seven fifteen
+wake me up at three thirty
+what time is my alarm set for
+whats my earliest alarm
+whats my next alarm
+when is my next alarm

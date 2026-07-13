@@ -1,0 +1,96 @@
+are you connected
+are you online
+are you paying attention
+are you still there
+are you working properly
+be quiet
+can you hear me
+can you speak a little louder
+can you speak a little quieter
+cancel that
+come back
+come back online
+dial back the volume
+disable the microphone
+disregard that last thing
+enable the microphone
+exit sleep mode
+forget that last command
+go dormant
+go to sleep
+hey janet are you there
+hey janet mute yourself
+hey janet turn your volume up
+hey janet what can you do
+how do i talk to you
+hush
+im back talk to me now
+im done talking to you for now
+im having trouble hearing you
+janet repeat that
+janet speak louder
+janet stop listening
+janet wake up
+keep talking
+lower the volume a bit
+lower your voice
+lower your volume
+make yourself louder
+make yourself quieter
+never mind cancel that
+pause yourself
+power on
+quiet down
+raise the volume a bit
+raise your voice
+raise your volume
+reboot
+restart yourself
+resume listening
+say that again
+scratch that
+set the volume to low
+set the volume to max
+set your volume to fifty percent
+speak a bit louder
+speak a bit softer
+speak up
+start listening again
+start listening to me again
+stop listening for a while
+stop listening to me
+take a break
+talk louder please
+that was wrong forget it
+that wasnt what i meant
+turn it down a notch
+turn it up a notch
+turn off listening mode
+turn on listening mode
+turn the sound down
+turn the sound up
+turn the volume all the way down
+turn the volume all the way up
+turn your volume down
+turn your volume up
+undo that
+unmute yourself
+unpause yourself
+volume down a little
+volume up a little
+wake back up
+wake up
+what are your capabilities
+what can you do
+what commands do you understand
+what should i call you
+what version are you
+whats your battery level
+whats your current mode
+whats your name
+why arent you responding
+you are too loud
+you are too quiet
+you didnt hear that right
+youre barely audible
+youre way too loud right now
