@@ -1,7 +1,13 @@
 import re
 
+from intent import classifier
+
 _UNIT_SECONDS = {"second": 1, "minute": 60, "hour": 3600}
-_CALC_WORDS = (" plus ", " minus ", " times ", " divided by ", " multiplied by ")
+
+# Below this softmax probability we don't act on the model's guess. This is a
+# placeholder gate: once the multi-signal scorer exists it will own the
+# respond/ignore decision and this can relax.
+CONF_THRESHOLD = 0.5
 
 
 def _parse_duration(query):
@@ -12,15 +18,23 @@ def _parse_duration(query):
     return int(match.group(1)) * _UNIT_SECONDS[match.group(2)]
 
 
+def _slots_for(label, query):
+    """Fill the slots a handler needs. The classifier gives the intent TYPE;
+    slot extraction stays rule-based (the spec's Layer-2 deterministic parse)."""
+    if label == "TIMER":
+        return {"duration": _parse_duration(query)}
+    if label == "CALC":
+        return {"expression": query}
+    return {}
+
+
 def decide_action(query):
-    q = query.lower()
-    # \btime\b so the multiplication word "times" (and "timer") don't match TIME.
-    if re.search(r"\btime\b", q) and ("what" in q or "tell" in q):
-        return ("TIME", {})
-    if "the date" in q or "what day" in q:
-        return ("DATE", {})
-    if "timer" in q:
-        return ("TIMER", {"duration": _parse_duration(q)})
-    if "calculate" in q or any(word in q for word in _CALC_WORDS):
-        return ("CALC", {"expression": q})
-    return (None, {})
+    """Classify the utterance, then extract slots for the predicted intent.
+
+    Returns (intent, slots), or (None, {}) when the utterance isn't for JANET
+    (NONE) or the model isn't confident enough to act on.
+    """
+    label, confidence = classifier.predict(query)
+    if label == "NONE" or confidence < CONF_THRESHOLD:
+        return (None, {})
+    return (label, _slots_for(label, query))
