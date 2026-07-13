@@ -1,0 +1,99 @@
+are the bedroom lights on
+are the garage lights off
+are the hallway lights on
+brighten the kitchen lights
+brighten the office lights a bit
+can you dim the dining room lights
+check if the front door is locked
+close the bedroom blinds
+close the garage
+close the kitchen curtains
+close the living room blinds
+crack the bathroom window blinds open
+dim the bedroom lights to thirty percent
+dim the living room lights halfway
+drop the temperature to sixty five
+extinguish the porch light
+is the back door locked
+is the bathroom fan running
+is the front door locked
+is the garage door open
+is the heater on in the office
+is the porch light on
+is the thermostat set to seventy
+kill the coffee maker
+kill the hallway lights
+lock all the doors
+lock the back door
+lock the front door
+lock the garage door
+lower the blinds in the bedroom
+lower the living room blinds halfway
+make it cooler in the bedroom
+make it warmer in here
+open the blinds in the office
+open the garage door
+open the living room curtains
+put the house in movie mode
+put the house in night mode
+raise the bedroom blinds
+raise the kitchen blinds
+set the bathroom fan to low
+set the bedroom to seventy two degrees
+set the downstairs thermostat to sixty six
+set the house to movie mode
+set the kitchen speaker volume to low
+set the living room to away mode
+set the office temperature to seventy one
+set the thermostat to sixty eight
+shut off the bathroom fan
+shut off the bedroom heater
+shut off the garage lights
+shut the blinds in the living room
+shut the front door
+start the coffee maker
+start the coffee maker in the kitchen
+start the living room fan
+switch off the coffee maker
+switch off the hallway lights
+switch off the kitchen fan
+switch off the office lamp
+switch on the bedroom fan
+switch on the porch light
+turn down the bedroom thermostat
+turn down the living room heater
+turn everything off downstairs
+turn everything off upstairs
+turn off all the lights in the house
+turn off the bedroom lights
+turn off the garage lights
+turn off the hallway lights
+turn off the kitchen fan
+turn off the living room lights
+turn off the living room tv
+turn off the office lamp
+turn on the bathroom heater
+turn on the bedroom fan
+turn on the coffee maker
+turn on the garage lights
+turn on the hallway lights
+turn on the kitchen fan
+turn on the living room tv
+turn on the office lights
+turn on the porch light at sunset
+turn on the porch light at dusk
+turn the bedroom fan on low
+turn the office lights up all the way
+turn the outdoor plug off
+turn the porch light off
+turn the tv off in the living room
+turn up the heat in the bathroom
+turn up the office thermostat
+turn up the living room fan
+unlock the back door
+unlock the front door
+unlock the garage door
+what is the temperature set to
+whats the living room thermostat set to
+whats the status of the front door
+whats the upstairs thermostat set to
