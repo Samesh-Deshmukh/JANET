@@ -4,9 +4,9 @@ from intent import classifier
 
 _UNIT_SECONDS = {"second": 1, "minute": 60, "hour": 3600}
 
-# Below this softmax probability we don't act on the model's guess. This is a
-# placeholder gate: once the multi-signal scorer exists it will own the
-# respond/ignore decision and this can relax.
+# Below this softmax probability the classifier isn't sure enough to act — treated
+# the same as NONE (a veto). Above it, the confidence also feeds a small bonus to
+# the addressing score (see dispatch.respond).
 CONF_THRESHOLD = 0.5
 
 
@@ -28,17 +28,11 @@ def _slots_for(label, query):
     return {}
 
 
-def decide_action(query):
-    """Classify the utterance, then extract slots for the predicted intent.
+def classify(query):
+    """Classify one (normalized) utterance.
 
-    Returns (intent, slots), or (None, {}) when the utterance isn't for JANET
-    (NONE) or the model isn't confident enough to act on.
+    Returns (label, confidence, slots). The caller decides whether to act — this
+    just reports what the classifier saw and the slots that label would need.
     """
     label, confidence = classifier.predict(query)
-    suppressed = label == "NONE" or confidence < CONF_THRESHOLD
-    # Show the raw classifier output (incl. NONE / low-confidence cases that
-    # main.py's reply line would otherwise hide), and whether we acted on it.
-    print(f"🧠 Intent: {label} ({confidence:.0%}){' — ignored' if suppressed else ''}")
-    if suppressed:
-        return (None, {})
-    return (label, _slots_for(label, query))
+    return label, confidence, _slots_for(label, query)
