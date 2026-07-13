@@ -35,6 +35,10 @@ def decide_action(query):
     (NONE) or the model isn't confident enough to act on.
     """
     label, confidence = classifier.predict(query)
-    if label == "NONE" or confidence < CONF_THRESHOLD:
+    suppressed = label == "NONE" or confidence < CONF_THRESHOLD
+    # Show the raw classifier output (incl. NONE / low-confidence cases that
+    # main.py's reply line would otherwise hide), and whether we acted on it.
+    print(f"🧠 Intent: {label} ({confidence:.0%}){' — ignored' if suppressed else ''}")
+    if suppressed:
         return (None, {})
     return (label, _slots_for(label, query))
