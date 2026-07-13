@@ -1,0 +1,549 @@
+# talking to other people
+can you pass the salt
+did you finish your homework
+im heading out see you later
+can you grab the mail on your way in
+close the door its cold
+did you feed the dog yet
+wheres your brother
+put your shoes on were leaving
+can you hold this for a second
+did you lock the car
+im going to the store you need anything
+watch your step there
+can you turn that down a little
+did you email the landlord about the sink
+hand me the remote please
+are you almost ready to go
+did you see my other sock anywhere
+can we talk about this later
+your food is getting cold
+did you take the trash out
+can you help me carry this upstairs
+did you sign the form for school
+im not mad im just tired
+can you check if the oven is off
+did you already eat
+we should leave in ten minutes
+can you turn the fan off
+did you walk the dog this morning
+can you keep it down im on a call
+did you get my text from earlier
+im borrowing your charger is that fine
+can you watch the kids for a minute
+did you pay the electric bill
+were out of milk again
+can you open the window a crack
+did anyone call while i was out
+im not going to that party
+can you switch seats with me
+did you clean your room like i asked
+were almost out of coffee
+can you drop me off at the station
+did you talk to your sister
+im leaving my keys here on the counter
+can someone let the cat in
+did you check the mailbox today
+were having pasta for dinner
+
+# tv media music overheard
+and thats the news at ten
+previously on your favorite show
+dancing in the moonlight
+stay tuned for more after the break
+coming up next on the local news
+this episode is brought to you by
+the weather across the region tonight
+in tonights top story a local family
+lets go now to our reporter on the scene
+and now back to our regularly scheduled program
+this has been a public service announcement
+the crowd goes wild as the final buzzer sounds
+next up on the countdown were number three
+we caught up with the star of the film
+critics are calling it the movie of the year
+and now a word from our sponsors
+the votes are in and the winner is
+lets take a quick commercial break
+tonight on a very special episode
+the ratings for the finale were huge
+somewhere over the rainbow way up high
+i cant get no satisfaction
+sweet dreams are made of this
+its the most wonderful time of the year
+you cant always get what you want
+here comes the sun little darling
+walking on sunshine woah
+dont stop believing hold on to that feeling
+we are the champions my friends
+all you need is love
+the show must go on
+this just in from our newsroom
+breaking news out of the capital tonight
+and thats how the story ends folks
+the judges have made their final decision
+please stay seated until the credits finish
+the studio audience erupted in applause
+according to sources close to the situation
+in other headlines today
+the box office numbers are in for this weekend
+
+# phone call fragments
+yeah no i told him that already
+okay ill call you back in five
+no not that one the other one
+sorry can you say that again
+hold on let me check real quick
+yeah im still here
+okay talk to you tomorrow then
+no i didnt get your voicemail
+can you send that over again
+alright ill see you when i get there
+yeah that works for me
+no worries ill figure it out
+okay so what time again
+yeah just text me the address
+sorry my phones been acting up
+no i already told them twice
+okay lets circle back on that tomorrow
+yeah i think thats fine with me
+hold on the other line is beeping
+no i havent heard from her yet
+okay ill let you know either way
+yeah i can do saturday instead
+sorry i missed your call earlier
+no thats not what i meant
+okay so we still on for later
+yeah i think it should be fine
+alright well figure something out
+no i dont think thats right
+okay ill send you the details
+yeah give me a minute im driving
+
+# thinking out loud muttering
+where did i put my keys
+ugh i really dont want to do this
+okay focus focus
+why did i even come in here
+what was i doing again
+oh come on not again
+i swear i just had it
+this is so frustrating
+okay lets just get through this
+why is this taking so long
+i should really clean this up
+what did i come in here for
+ugh not this again
+okay one thing at a time
+i really need a coffee right now
+why cant i ever find anything
+this is going to take forever
+okay just breathe
+i cant believe i forgot that
+where is that thing i had
+ugh my back is killing me
+okay lets try that again
+why does this always happen to me
+i really should call her back
+this drawer is such a mess
+okay almost done just a bit more
+i knew i forgot something
+why is it so quiet in here
+ugh i hate mornings
+okay lets see what we have here
+
+# reading aloud
+warning contents may be hot
+add two cups of flour and stir
+do not exceed the recommended dose
+keep out of reach of children
+preheat the oven to three fifty
+mix well before each use
+store in a cool dry place
+shake well before opening
+season with salt and pepper to taste
+let it simmer for twenty minutes
+fold in the egg whites gently
+allow to cool before serving
+whisk together the eggs and sugar
+bake until golden brown on top
+this product contains nuts and dairy
+follow the instructions on the back
+insert tab a into slot b
+tighten the screws in a criss cross pattern
+attach the bracket to the wall first
+some assembly required batteries not included
+turn the dial clockwise to increase heat
+apply a thin layer and let dry
+rinse thoroughly and pat dry
+remove all packaging before use
+caution surface may still be warm
+
+# partial trailing off
+so anyway i was going to
+and then she
+wait what was i
+i was just about to
+so then he goes and
+hang on i almost
+oh wait i forgot to
+so basically what happened was
+and after that we just
+i mean i guess it could
+so the thing is
+well actually it turns out
+and honestly i think
+so then we ended up
+wait no i meant to say
+and then out of nowhere
+so like i was saying
+i think what i meant was
+and so eventually they
+well the funny part is
+
+# near misses vs calc
+times tables are hard
+my math homework is due
+i was never good at math
+she teaches calculus at the school
+that math problem took forever
+the multiplication table is on the fridge
+he counted the money twice
+the numbers just dont add up
+i failed my algebra test
+the calculator ran out of batteries
+division was always my weak subject
+the equation on the board looks wrong
+
+# near misses vs weather
+what a lovely day
+she has a sunny personality
+the weatherman got it wrong again
+its been raining on my parade lately
+that was a whirlwind week
+he stormed out of the room
+the forecast for the meeting looks grim
+we had a foggy memory of that night
+the mood in here is pretty chilly
+a cloud of confusion hung over the room
+the atmosphere at the party was electric
+the weather channel is on in the other room
+
+# near misses vs alarm
+i set my alarm wrong yesterday
+that movie was alarming
+the smoke alarm keeps going off for no reason
+my alarm didnt go off this morning
+he sounded the alarm too early
+the car alarm across the street wont stop
+her alarm clock is so loud
+that news gave everyone quite an alarm
+the fire alarm test is scheduled for noon
+i slept right through my alarm again
+
+# near misses vs time
+time really flies
+we had a great time
+its about time someone said that
+time heals all wounds they say
+he has terrible timing
+the timing of that joke was perfect
+we lost track of time completely
+that was the time of my life
+timing is everything in comedy
+she always shows up right on time
+this is a bad time to bring that up
+long time no see
+
+# near misses vs timer
+the timing was perfect
+the oven timer thing is broken
+he set the pace like a metronome
+the countdown to the launch was tense
+that race came down to the wire
+the stopwatch app on his phone is glitchy
+the egg timer shaped like a chicken is cute
+they timed the whole event to the minute
+
+# near misses vs email
+i hate checking email all day
+my inbox is a disaster
+she never replies to emails on time
+that email chain is out of control
+i got so much spam this morning
+the newsletter clogs up my inbox
+he types emails so slowly
+my email account got hacked last year
+
+# near misses vs smart home
+the lights downtown are so pretty
+i left the lights on last night
+the streetlights flicker on this block
+her house always looks so cozy with the lights on
+the porch light bulb burned out
+the christmas lights are still up outside
+the thermostat argument never ends in this house
+the lock on the shed is rusted shut
+
+# near misses vs reminder
+that reminds me of a story
+this song reminds me of summer
+he never remembers anything without a note
+sticky notes are all over her desk
+i forgot again just like always
+her memory is like a steel trap
+that smell reminds me of grandmas kitchen
+i keep forgetting to write things down
+
+# near misses vs calendar
+my schedule is packed this year
+the calendar on the wall is from last year
+she marked every holiday in red
+the planner is falling apart at the spine
+his schedule never has any free time
+the school year calendar just got released
+next month looks completely booked already
+the wall calendar still says april
+
+# near misses vs system
+the system is down again at work
+my computer keeps freezing up
+the wifi router needs a restart
+this app update broke everything
+the battery on this thing drains so fast
+the settings menu is impossible to find anything in
+tech support put me on hold forever
+the software crashed right before i saved
+
+# near misses vs date
+what a strange date that was
+they went on a first date last night
+the expiration date is hard to read
+save the date for the wedding
+he asked her out on a date
+the due date for the project moved
+the fruit at the bottom is actually a date
+mark that date on your calendar please
+
+# near misses vs general
+that question is way above my pay grade
+he always has an answer for everything
+im not sure thats a fact actually
+she looked it up and it turns out shes right
+the trivia night got really competitive
+i have no idea what that word means
+he explained it but i still dont get it
+lets not turn this into a whole debate
+
+# tv media more
+tune in next week for the conclusion
+the anchor tossed it over to sports
+its raining trivia questions on this game show
+the host read out todays lucky numbers
+that commercial jingle is stuck in my head
+the crowd counted down to midnight together
+the director yelled cut and everyone relaxed
+the credits are rolling already
+this scene always makes me tear up
+the villain finally gets what he deserves
+the halftime show just started
+the announcer called it a photo finish
+the studio lights flickered during the take
+this song was huge back in the day
+the chorus repeats one more time
+the drummer kicked off the second verse
+the encore lasted almost ten minutes
+the band thanked the crowd and walked off
+the credits list way too many names
+the rerun is somehow funnier the second time
+
+# phone call more
+yeah hold on my other phone is ringing
+no i swear i sent that this morning
+okay so are we still meeting at noon
+yeah i can hear you fine now
+sorry the signal keeps cutting out here
+no problem ill grab it on my way home
+okay well just play it by ear then
+yeah shes right here actually
+no i think you have the wrong number
+alright talk soon take care
+yeah lets just do a group chat instead
+no worries happens to everyone
+okay ill loop you in tomorrow
+yeah i already paid for that
+sorry i have to jump on another call
+no i meant next tuesday not this one
+okay well see how it goes
+yeah he already left an hour ago
+no thats a totally different address
+alright ill text you when im close
+yeah just leave it at the front desk
+no i cant hear anything you just said
+okay fine ill ask him myself then
+yeah that sounds about right to me
+sorry i have to go my battery is dying
+no she already picked it up yesterday
+okay lets aim for sometime next week
+yeah ill forward you the details
+no i dont think they got the message
+alright ill call the office tomorrow
+
+# thinking out loud more
+did i already lock the front door
+i really need to water these plants
+okay where does this go again
+i cant believe i missed that turn
+ugh i left my umbrella at home again
+what day is it even today
+i really need to organize this closet
+okay just one more chore and im done
+why do i always lose one glove
+i think ive seen this before somewhere
+okay lets not overthink this
+i probably should call the plumber
+where does this cable even plug in
+ugh i hate when my headphones tangle
+i wonder if i left the stove on
+okay lets just wing it
+i should really back up my photos
+why is this box so heavy
+i think i left my phone in the car
+okay deep breath lets try again
+i really need new shoes soon
+this recipe smells amazing already
+i wonder what time it got so late
+okay almost there just a little more
+why does the printer always jam
+i should probably call it a night
+this puzzle is way harder than it looks
+okay lets see if this fits
+i really need to vacuum in here
+why cant i find a matching lid
+
+# reading aloud more
+turn to page forty seven to begin
+chapter one begins on a dark and stormy night
+directions apply once daily with food
+this item ships within two business days
+serves four to six people
+net weight one pound six ounces
+made with organic ingredients
+handle with care fragile contents inside
+recycle this container where facilities exist
+do not operate near open flame
+keep refrigerated after opening
+best used within thirty days of opening
+this coupon expires at the end of the month
+please recycle responsibly
+allow to rest for five minutes before slicing
+add the onions and cook until soft
+stir occasionally to prevent sticking
+drain and rinse before serving
+line the pan with parchment paper first
+set aside to cool completely
+this warranty covers parts and labor
+consult a professional before attempting repairs
+results may vary based on usage
+void where prohibited by law
+terms and conditions apply see website for details
+batteries sold separately
+assembly time approximately thirty minutes
+do not use if seal is broken
+store away from direct sunlight
+wash hands thoroughly after handling
+
+# partial trailing off more
+i was thinking maybe we could
+so if you just
+and right when i thought
+well i guess we could always
+so basically the plan is to
+and before i forget
+i was going to say that
+so like what if we just
+and honestly at this point
+well i suppose it depends on
+so the next thing was going to be
+and then right after that
+i think the whole point was
+so were probably going to
+well maybe if we just
+
+# near misses more vs calc
+he can do all that math in his head
+the tip calculator on my phone is broken
+she aced every math test this semester
+long division still confuses me
+the abacus is just for decoration now
+that spreadsheet formula is way too complicated
+
+# near misses more vs weather
+he blew in like a hurricane and left just as fast
+the mood outside is bright and cheerful today
+their relationship has been pretty stormy lately
+she brightened up the whole room just by walking in
+the news called it a perfect storm of bad luck
+that was a whirlwind trip we barely slept
+
+# near misses more vs alarm
+dont be alarmed its just the cat
+he raised the alarm before anyone else noticed
+the alarm system at the office is so sensitive
+that headline was designed to alarm people
+her alarm ringtone is way too cheerful for mornings
+
+# near misses more vs time
+we spent quality time together this weekend
+its high time we fixed that leaky faucet
+he always arrives right on time no matter what
+time will tell if this plan actually works
+those were simpler times back then
+
+# near misses more vs timer
+the microwave beeping sounded like a countdown
+his internal clock is impossibly accurate
+the race officials reset the clock after the delay
+that scene builds tension like a ticking clock
+
+# near misses more vs email
+her signature at the bottom of every email is huge
+i archive old emails instead of deleting them
+the attachment never actually came through
+he cc'd the whole department by accident
+
+# near misses more vs smart home
+the neighbors leave their porch light on all night
+the thermostat war between us never really ends
+that smart speaker keeps mishearing everything i say
+the hallway light flickers whenever it rains
+
+# near misses more vs reminder
+the note on the fridge has been there for weeks
+he keeps a running list on a notepad by the door
+that old photo brought back so many memories
+i set fifty reminders and still forget things
+
+# near misses more vs calendar
+the office calendar is double booked again
+she pinned the whole itinerary to the fridge
+next quarter already looks completely full
+the wall planner has more scribbles than plans
+
+# near misses more vs system
+the update froze halfway through installing
+the router blinks red when the internet drops
+customer support just kept transferring the call
+the laptop fan sounds like its taking off
+
+# near misses more vs date
+they celebrate their anniversary every spring
+the milk in the fridge is already expired
+he circled the wrong day on the calendar
+she still remembers the exact day they met
+
+# near misses more vs general
+nobody in the room actually knew the answer
+he loves trivia but always gets the last question wrong
+that documentary explained it way better than school did
+the debate went on way longer than anyone expected
