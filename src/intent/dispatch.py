@@ -45,23 +45,33 @@ def respond(query, ctx):
     # otherwise make the scorer miss every signal and skew the classifier.
     query = normalize(query)
 
-    # Layer 2: what is it, and is the classifier sure?
-    label, confidence, slots = classify(query)
-    vetoed = label == "NONE" or confidence < CONF_THRESHOLD
-    print(f"🧠 Intent: {label} ({confidence:.0%}){' — ignored' if vetoed else ''}")
-    if vetoed:
-        return None                              # NONE / low confidence -> stay silent
-
-    # Layer 1: was it addressed to JANET? Linguistic signals + a small confidence bonus.
+    # Layer 1 (cheap) runs first. If the linguistic score is so low that even a
+    # maxed-out confidence bonus couldn't reach the threshold, it can't be
+    # rescued -- so we stay silent WITHOUT paying for the classifier. This skips
+    # the model on the low-signal ambient chatter that fills a room.
     ling, breakdown = score(query)
-    bonus = round(confidence * CONF_BONUS_SCALE)
-    combined = ling + bonus
     detail = ", ".join(f"{name} +{pts}" for name, pts in breakdown) or "no signals"
+    if ling < THRESHOLD - CONF_BONUS_SCALE:
+        print(f"🛡  Score: {ling} ({detail}) → ignored (classifier skipped)")
+        return None
+
+    # Plausibly addressed -> we need the classifier anyway (for the intent + the
+    # NONE veto), so run it now.
+    label, confidence, slots = classify(query)
+    if label == "NONE" or confidence < CONF_THRESHOLD:
+        print(f"🧠 Intent: {label} ({confidence:.0%}) — ignored")
+        return None                              # NONE / low confidence -> stay silent
+    print(f"🧠 Intent: {label} ({confidence:.0%})")
+
+    # The confidence bonus is only needed when the linguistic score fell short --
+    # a passing score doesn't change by adding to it.
+    bonus = round(confidence * CONF_BONUS_SCALE) if ling < THRESHOLD else 0
+    combined = ling + bonus
+    shown = f"{ling}+{bonus}={combined}" if bonus else f"{ling}"
     addressed = combined >= THRESHOLD
-    print(f"🛡  Score: {ling}+{bonus}={combined} ({detail}; conf +{bonus}) "
-          f"→ {'addressed' if addressed else 'ignored'}")
+    print(f"🛡  Score: {shown} ({detail}) → {'addressed' if addressed else 'ignored'}")
     if not addressed:
-        return None                              # not addressed -> stay silent
+        return None                              # borderline but not rescued -> silent
 
     reply = dispatch(label, slots, ctx)
     if reply is None:
