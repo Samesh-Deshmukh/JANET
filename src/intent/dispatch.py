@@ -1,6 +1,7 @@
 # src/intent/dispatch.py
 from actions import time_action, date_action, timer_action, calc_action
 from intent.intent import decide_action
+from intent.normalize import normalize
 from intent.scorer import score, THRESHOLD
 
 REGISTRY = {
@@ -31,6 +32,11 @@ def respond(query, ctx):
     Layer 2 (classifier, inside decide_action): a real intent, or NONE/unsure?
     Either layer vetoing => None (silent).
     """
+    # Normalize once so both veto layers see the clean form the dataset used
+    # ("What's the time?" -> "whats the time"); Whisper's caps/punctuation would
+    # otherwise make the scorer miss every signal and skew the classifier.
+    query = normalize(query)
+
     total, breakdown = score(query)
     detail = ", ".join(f"{name} +{pts}" for name, pts in breakdown) or "no signals"
     addressed = total >= THRESHOLD
