@@ -4,7 +4,7 @@
 
 Everything runs on-device. No cloud calls for core functions; no wake word to press or say — JANET listens continuously and works out for itself when you're talking to it.
 
-> **Status: early prototype.** The audio pipeline and the intent brain (addressing scorer + trained classifier) work end-to-end. Most *action handlers* aren't built yet, so recognized intents like weather or email currently answer "I can't help with that yet." This is also a personal learning project — the code favours being understandable over clever.
+> **Status: early prototype.** The audio pipeline and the intent brain (addressing scorer + trained classifier) work end-to-end, and general questions are answered by a local LLM (Ollama / Qwen3 14B). Some *action handlers* aren't built yet, so recognized intents like weather or email currently answer "I can't help with that yet." This is also a personal learning project — the code favours being understandable over clever.
 
 ## The pipeline
 
@@ -24,7 +24,9 @@ If either gate says no, JANET stays silent — which matters a lot for an always
 
 | Works today | Recognized, handler not built yet |
 |-------------|-----------------------------------|
-| TIME, DATE, TIMER, CALC (digit math) | WEATHER, EMAIL, CALENDAR, REMINDER, ALARM, SMART_HOME, SYSTEM, GENERAL |
+| TIME, DATE, TIMER, CALC (digit math), GENERAL (local LLM) | WEATHER, EMAIL, CALENDAR, REMINDER, ALARM, SMART_HOME, SYSTEM |
+
+**GENERAL** questions ("what's the capital of France?") go to a local **Ollama** model (`qwen3:14b` by default, a one-line config constant in `actions/general_action.py`) with a brevity prompt so answers stay short and speakable. If Ollama isn't running JANET says so instead of crashing. Everything stays on-device.
 
 ## Getting started
 
@@ -33,6 +35,7 @@ Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **norma
 ```bash
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+ollama pull qwen3:14b             # local LLM for GENERAL questions (needs Ollama installed)
 cd src && python main.py          # runs from src/ — see the import note below
 ```
 
@@ -66,7 +69,7 @@ src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
-  actions/           per-intent handlers (TIME, DATE, TIMER, CALC so far)
+  actions/           per-intent handlers (TIME, DATE, TIMER, CALC, GENERAL so far)
   utils/             context + helpers
 data/
   text/              intent dataset (train/val), labels.txt, validate.py
@@ -81,4 +84,4 @@ data/
 
 ## Target stack
 
-Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · Piper TTS and a local Ollama/Gemma LLM fallback (both planned). Everything on-device.
+Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local Ollama LLM fallback (Qwen3 14B, live) · Piper TTS (planned). Everything on-device.
