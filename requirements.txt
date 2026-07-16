@@ -29,6 +29,9 @@ matplotlib==3.10.5
 transformers==5.2.0
 accelerate==1.14.0       # required by the HuggingFace Trainer for DistilBERT fine-tuning (intent/train.py)
 
+# --- LLM (local general-question fallback via Ollama) ---
+ollama==0.6.2            # thin client for the local Ollama server; needs `ollama pull qwen3:14b`
+
 # --- Vision (planned: src/vision) ---
 opencv-python==4.13.0.92
 
