@@ -17,30 +17,34 @@ from audio.stt import transcribe
 from audio.tts import say
 from intent.dispatch import respond
 from utils.context import Context
+from utils.history import ConversationHistory
 
 MAX_UTTERANCE_S = 30
 MAX_UTTERANCE_FRAMES = MAX_UTTERANCE_S * TARGET_RATE // FRAME_SAMPLES
 
 
-def _handle(utterance):
+def _handle(utterance, history):
     """Transcribe one collected utterance and respond to it."""
     audio = np.concatenate(utterance)
     query = transcribe(audio)
     print(f"🗣  You said: {query.strip()}")
     if not query.strip():
         return                      # Whisper heard nothing intelligible; stay quiet
-    ctx = Context(speak=say, query=query)
+    ctx = Context(speak=say, query=query, history=history)
     reply = respond(query, ctx)
     if reply is None:
         return                          # not addressed / not for JANET — stay silent
     print(f"⚙️  Reply: {reply}")
     say(reply)
+    # Remember this addressed exchange so later questions have context.
+    history.add(query, reply)
 
 
 def main():
     print("JANET is running (always-listening). Press Ctrl-C to quit.")
     detector = SpeechDetector()
     ring = RingBuffer(capacity=PRE_ROLL_SAMPLES)
+    history = ConversationHistory()     # short-term memory, shared across turns
     utterance = None                # None = idle; a list = actively collecting
 
     for frame in frames():
@@ -54,7 +58,7 @@ def main():
         else:
             utterance.append(frame)
             if event == "end" or len(utterance) >= MAX_UTTERANCE_FRAMES:
-                _handle(utterance)
+                _handle(utterance, history)
                 detector.reset()
                 ring.clear()
                 utterance = None

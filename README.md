@@ -28,6 +28,8 @@ If either gate says no, JANET stays silent — which matters a lot for an always
 
 **GENERAL** questions ("what's the capital of France?") go to a local **Ollama** model (`qwen3:14b` by default, a one-line config constant in `actions/general_action.py`) with a brevity prompt so answers stay short and speakable. If Ollama isn't running JANET says so instead of crashing. Everything stays on-device.
 
+JANET also keeps a **short-term conversation memory** (`utils/history.py`) — the last few addressed exchanges are fed back to the LLM, so follow-ups work: *"what's the capital of France?"* → *"Paris"*, then *"what about Germany?"* → *"Berlin."* It's in-memory and resets on restart.
+
 ## Getting started
 
 Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **normal user** (not `sudo` — a per-user PipeWire mic is unreachable as root).
@@ -70,7 +72,7 @@ src/
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
   actions/           per-intent handlers (TIME, DATE, TIMER, CALC, GENERAL so far)
-  utils/             context + helpers
+  utils/             context, conversation memory (history.py), helpers
 data/
   text/              intent dataset (train/val), labels.txt, validate.py
   models/            trained model (gitignored)
