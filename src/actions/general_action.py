@@ -27,15 +27,16 @@ UNAVAILABLE = "Sorry, my language model isn't available right now."
 
 def handle(slots, ctx):
     """Answer a general question via the local LLM. `slots` is unused (GENERAL
-    carries no slots); the question is the raw transcript on ctx.query."""
+    carries no slots); the question is the raw transcript on ctx.query. Prior
+    turns from ctx.history are prepended so follow-ups have context."""
     question = ctx.query.strip()
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages += ctx.history.messages()      # prior turns (may be empty on turn 1)
+    messages.append({"role": "user", "content": question})
     try:
         resp = ollama.chat(
             model=MODEL,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": question},
-            ],
+            messages=messages,
             think=False,   # qwen3 can "think"; we don't want it spoken or slow
         )
     except (ConnectionError, ollama.ResponseError):
