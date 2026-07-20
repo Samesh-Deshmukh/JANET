@@ -1,5 +1,5 @@
 # src/intent/dispatch.py
-from actions import time_action, date_action, timer_action, calc_action, general_action
+from actions import time_action, date_action, timer_action, calc_action, general_action, alarm_action
 from intent.intent import classify, CONF_THRESHOLD
 from intent.normalize import normalize
 from intent.scorer import score, THRESHOLD
@@ -17,6 +17,7 @@ REGISTRY = {
     "TIMER": timer_action.handle,
     "CALC": calc_action.handle,
     "GENERAL": general_action.handle,
+    "ALARM": alarm_action.handle,
 }
 
 

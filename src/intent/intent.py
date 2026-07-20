@@ -1,6 +1,7 @@
 import re
 
 from intent import classifier
+from intent import timeparse
 
 _UNIT_SECONDS = {"second": 1, "minute": 60, "hour": 3600}
 
@@ -25,6 +26,8 @@ def _slots_for(label, query):
         return {"duration": _parse_duration(query)}
     if label == "CALC":
         return {"expression": query}
+    if label == "ALARM":
+        return {"alarm": timeparse.parse_alarm(query)}
     return {}
 
 
