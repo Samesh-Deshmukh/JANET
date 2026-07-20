@@ -21,9 +21,17 @@ _CANCEL_WORDS = ("cancel", "stop", "delete", "remove", "turn off")
 def _parse_time(text):
     """(hour, minute, meridiem) from the normalized time forms, or (None, 0, None).
     hour is as spoken (1-12), or 24-hour when a >=13 form is used."""
+    # Whisper writes "p.m."/"a.m.", which normalize turns into spaced "p m"/"a m";
+    # collapse those back so meridiem matching is uniform ("505 p m" -> "505 pm").
+    text = re.sub(r"\b([ap])\s*m\b", r"\1m", text)
     m = re.search(r"\b(\d{1,2})\s+(\d{2})\s*(am|pm)\b", text)   # "7 30 am"
     if m:
         return int(m.group(1)), int(m.group(2)), m.group(3)
+    # Compact "HHMM"/"HMM" — Whisper drops the colon ("5:05" -> "505", "12:30" -> "1230").
+    m = re.search(r"\b(\d{3,4})\s*(am|pm)?\b", text)
+    if m:
+        digits = m.group(1)
+        return int(digits[:-2]), int(digits[-2:]), m.group(2)
     m = re.search(r"\b(\d{1,2})\s*(am|pm)\b", text)             # "7 am" / glued "7am"
     if m:
         return int(m.group(1)), 0, m.group(2)
