@@ -24,13 +24,15 @@ If either gate says no, JANET stays silent — which matters a lot for an always
 
 | Works today | Recognized, handler not built yet |
 |-------------|-----------------------------------|
-| TIME, DATE, TIMER, CALC (digit math), GENERAL (local LLM), ALARM | WEATHER, EMAIL, CALENDAR, REMINDER, SMART_HOME, SYSTEM |
+| TIME, DATE, TIMER, CALC (math), GENERAL (local LLM), ALARM | WEATHER, EMAIL, CALENDAR, REMINDER, SMART_HOME, SYSTEM |
 
 **GENERAL** questions ("what's the capital of France?") go to a local **Ollama** model (`qwen3:14b` by default, a one-line config constant in `actions/general_action.py`) with a brevity prompt so answers stay short and speakable. If Ollama isn't running JANET says so instead of crashing. Everything stays on-device.
 
 JANET also keeps a **short-term conversation memory** (`utils/history.py`) — the last few addressed exchanges are fed back to the LLM, so follow-ups work: *"what's the capital of France?"* → *"Paris"*, then *"what about Germany?"* → *"Berlin."* It's in-memory and resets on restart.
 
 **ALARM** sets one-shot, specific-day, and recurring alarms by voice and can cancel them — *"set an alarm for 7 AM"*, *"set an alarm for 8 on Wednesday"*, *"every weekday at 8"*, *"cancel the alarm"*. A bare time resolves to the soonest future occurrence (parsing in `intent/timeparse.py`, scheduling in `actions/alarm_action.py`). Alarms are in-memory and reset on restart.
+
+**CALC** does arithmetic plus exponents, modulo, square root, percentages, and **spoken number words** — *"twenty times three"* → 60, *"two to the power of ten"* → 1024, *"square root of 144"* → 12, *"twenty percent of fifty"* → 10. It requires a real operator (so a misheard number isn't answered as a "calculation"), rounds non-integer results, and refuses divide-by-zero. Number-word parsing lives in `intent/numwords.py`.
 
 ## Getting started
 
@@ -72,7 +74,7 @@ This reads the labelled dataset in `data/text/{train,val}/`, fine-tunes `distilb
 src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
-  intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch · timeparse (alarm parsing)
+  intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch · timeparse (alarm) · numwords (spoken numbers)
   actions/           per-intent handlers (TIME, DATE, TIMER, CALC, GENERAL, ALARM so far)
   utils/             context, conversation memory (history.py), helpers
 data/
