@@ -66,3 +66,71 @@ def recurrence_phrase(weekdays):
         (d,) = tuple(weekdays)
         return f"on {_NAMES[d]}s"
     return "on " + ", ".join(_NAMES[d] for d in sorted(weekdays))
+
+
+from threading import Timer
+
+_alarms = []            # active Alarm objects — the registry cancel + re-arm need
+
+
+class Alarm:
+    def __init__(self, hour24, minute, weekdays, recurring):
+        self.hour24 = hour24
+        self.minute = minute
+        self.weekdays = weekdays
+        self.recurring = recurring
+        self.timer = None
+
+    def arm(self, delay, ctx):
+        # daemon so a pending alarm never blocks Ctrl-C / shutdown.
+        self.timer = Timer(max(delay, 0), self._fire, args=(ctx,))
+        self.timer.daemon = True
+        self.timer.start()
+
+    def _fire(self, ctx):
+        ctx.speak(f"Alarm! It's {speak_time(self.hour24, self.minute)}.")
+        if self.recurring:
+            now = datetime.now()
+            nxt = next_occurrence(now, self.hour24, self.minute, self.weekdays)
+            self.arm((nxt - now).total_seconds(), ctx)   # re-arm on the pinned hour
+        elif self in _alarms:
+            _alarms.remove(self)
+
+
+def _describe(hour24, minute, spec, target):
+    """The confirmation line to speak back."""
+    t = speak_time(hour24, minute)
+    if spec["recurring"]:
+        return f"Alarm set for {t} {recurrence_phrase(spec['weekdays'])}."
+    today = datetime.now().date()
+    if target.date() == today:
+        return f"Alarm set for {t}."
+    if target.date() == today + timedelta(days=1):
+        return f"Alarm set for tomorrow at {t}."
+    return f"Alarm set for {t} on {target:%A}."
+
+
+def _cancel_all():
+    if not _alarms:
+        return "There's no alarm to cancel."
+    n = len(_alarms)
+    for alarm in _alarms:
+        if alarm.timer:
+            alarm.timer.cancel()
+    _alarms.clear()
+    return "Cancelled the alarm." if n == 1 else f"Cancelled {n} alarms."
+
+
+def handle(slots, ctx):
+    """ALARM intent entry: set (one-shot / specific-day / recurring) or cancel."""
+    spec = slots["alarm"]
+    if spec["action"] == "cancel":
+        return _cancel_all()
+    if spec["hour"] is None:
+        return "What time should I set the alarm for?"
+    now = datetime.now()
+    target, hour24 = resolve(now, spec)
+    alarm = Alarm(hour24, spec["minute"], spec["weekdays"], spec["recurring"])
+    alarm.arm((target - now).total_seconds(), ctx)
+    _alarms.append(alarm)
+    return _describe(hour24, spec["minute"], spec, target)
