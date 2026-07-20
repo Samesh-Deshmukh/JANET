@@ -69,7 +69,10 @@ def _to_expression(text):
 
 
 def handle(slots, ctx):
-    math = _to_expression((slots.get("expression") or "").lower())
+    # Read the RAW transcript (ctx.query), NOT a normalized slot: normalize strips
+    # math symbols and decimals ("25% of 52" -> "25 of 52", "3.5" -> "3 5"), which
+    # destroys the expression. Same reason general_action reads ctx.query.
+    math = _to_expression((ctx.query or "").lower())
     if not re.search(r"[-+*/%]", math):
         # No operator -> not a calculation (also stops misheard input like "510").
         return "I couldn't work that out."

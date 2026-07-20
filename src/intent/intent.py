@@ -24,8 +24,6 @@ def _slots_for(label, query):
     slot extraction stays rule-based (the spec's Layer-2 deterministic parse)."""
     if label == "TIMER":
         return {"duration": _parse_duration(query)}
-    if label == "CALC":
-        return {"expression": query}
     if label == "ALARM":
         return {"alarm": timeparse.parse_alarm(query)}
     return {}
