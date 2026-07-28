@@ -6,6 +6,7 @@ from actions import (
 from intent.intent import classify, CONF_THRESHOLD
 from intent.normalize import normalize
 from intent.scorer import score, THRESHOLD
+from utils import confirm
 
 # The classifier's confidence adds a small bonus to the addressing score:
 # bonus = round(confidence * CONF_BONUS_SCALE). At 10 a top-confidence intent is
@@ -50,6 +51,16 @@ def respond(query, ctx):
     # ("What's the time?" -> "whats the time"); Whisper's caps/punctuation would
     # otherwise make the scorer miss every signal and skew the classifier.
     query = normalize(query)
+
+    # A pending confirmation is answered BEFORE the veto layers: a bare "yes"
+    # carries no linguistic signal (score 0) and would be ignored as ambient
+    # speech. resolve() returns None when the utterance wasn't a yes/no, in which
+    # case we fall through and treat it as an ordinary command.
+    if confirm.is_pending():
+        answer = confirm.resolve(query)
+        if answer is not None:
+            print(f"✅ Confirmation: {query!r}")
+            return answer
 
     # Layer 1 (cheap) runs first. If the linguistic score is so low that even a
     # maxed-out confidence bonus couldn't reach the threshold, it can't be
