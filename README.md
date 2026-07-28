@@ -4,7 +4,7 @@
 
 Everything runs on-device. No cloud calls for core functions; no wake word to press or say — JANET listens continuously and works out for itself when you're talking to it.
 
-> **Status: early prototype.** The audio pipeline and the intent brain (addressing scorer + trained classifier) work end-to-end, and general questions are answered by a local LLM (Ollama / Qwen3 14B). Some *action handlers* aren't built yet, so recognized intents like weather or email currently answer "I can't help with that yet." This is also a personal learning project — the code favours being understandable over clever.
+> **Status: working prototype.** The audio pipeline, the intent brain (addressing scorer + trained classifier), and **every intent handler** are built: time, date, timers, alarms, reminders, maths, calendar, weather, smart home, email, system control, and open-ended questions answered by a local LLM (Ollama / Qwen3 14B). This is also a personal learning project — the code favours being understandable over clever.
 
 ## The pipeline
 
@@ -16,15 +16,29 @@ Mic ─► VAD ─► Whisper ─► normalize ─► Scorer ─► Classifier �
 Nothing is spoken unless **both** gates agree the utterance is a real request *to JANET*:
 
 1. **Scorer** (`intent/scorer.py`) — "Was this addressed to me?" Scores linguistic signals (question/command shape, "janet", keywords…) against a threshold. Cheap, runs first.
-2. **Classifier** (`intent/classifier.py`) — "What do they want?" A fine-tuned DistilBERT (13 intents, ~93% val accuracy). Also vetoes anything it reads as `NONE` (not a real intent) or is unsure about.
+2. **Classifier** (`intent/classifier.py`) — "What do they want?" A fine-tuned DistilBERT (13 intents, ~97% val accuracy). Also vetoes anything it reads as `NONE` (not a real intent) or is unsure about.
 
 If either gate says no, JANET stays silent — which matters a lot for an always-listening mic.
 
 ## Current capabilities
 
-| Works today | Recognized, handler not built yet |
-|-------------|-----------------------------------|
-| TIME, DATE, TIMER, CALC (math), GENERAL (local LLM), ALARM | WEATHER, EMAIL, CALENDAR, REMINDER, SMART_HOME, SYSTEM |
+Every intent the classifier recognises now has a handler:
+
+| Intent | What you can say |
+|---|---|
+| **TIME / DATE** | "what time is it", "what's the date" |
+| **TIMER** | "set a timer for 5 minutes", "set a pasta timer for 12 minutes", "how much time is left", "cancel the timer" |
+| **ALARM** | "set an alarm for 7 AM", "every weekday at 8", "set an alarm for 8 on Wednesday", "cancel the alarm" |
+| **REMINDER** | "remind me to call mom in ten minutes", "remind me to take the pills at 5", "what are my reminders" |
+| **CALC** | "what's 25% of 52", "twenty times three", "two to the power of ten", "square root of 144" |
+| **CALENDAR** | "what's on my calendar today", "what's my next meeting", "am I free tomorrow", "schedule a dentist appointment tomorrow at 3" |
+| **WEATHER** | "what's the weather", "will it rain tomorrow", "what's the weather in London" |
+| **SMART_HOME** | "turn on the living room lights", "switch off the fan", "are the kitchen lights on" |
+| **EMAIL** | "do I have any new email", "who emailed me", "read my last email", "reply saying I'll be there" |
+| **SYSTEM** | "turn the volume up", "set the volume to 40", "mute", "say that again", "what can you do" |
+| **GENERAL** | anything else → answered by the local LLM |
+
+Anything JANET decides wasn't addressed to it gets **silence**, not a reply.
 
 **GENERAL** questions ("what's the capital of France?") go to a local **Ollama** model (`qwen3:14b` by default, a one-line config constant in `actions/general_action.py`) with a brevity prompt so answers stay short and speakable. If Ollama isn't running JANET says so instead of crashing. Everything stays on-device.
 
@@ -34,6 +48,52 @@ JANET also keeps a **short-term conversation memory** (`utils/history.py`) — t
 
 **CALC** does arithmetic plus exponents, modulo, square root, percentages, and **spoken number words** — *"twenty times three"* → 60, *"two to the power of ten"* → 1024, *"square root of 144"* → 12, *"twenty percent of fifty"* → 10. It requires a real operator (so a misheard number isn't answered as a "calculation"), rounds non-integer results, and refuses divide-by-zero. Number-word parsing lives in `intent/numwords.py`.
 
+## Integrations
+
+Each integration hides behind a small protocol (`integrations/*_source.py`), so the
+handler never knows which backend it's talking to — and **each one ships a fake
+"demo" backend** with believable sample data. That means you can try JANET's
+calendar, weather, smart home and email with **no accounts and no credentials**,
+and it's how the whole thing is tested.
+
+| | Real backend | Demo |
+|---|---|---|
+| **Calendar** | CalDAV (self-hostable → fully local) or Google Calendar | `JANET_CALENDAR=demo` |
+| **Weather** | [Open-Meteo](https://open-meteo.com) — free, **no API key** | `JANET_WEATHER=demo` |
+| **Smart home** | Home Assistant over your own LAN | `JANET_SMART_HOME=demo` |
+| **Email** | IMAP (read) + SMTP (reply) | `JANET_EMAIL=demo` |
+
+Copy [`.env.example`](.env.example) to `.env` and fill in only what you use. Try it
+with no setup at all:
+
+```bash
+cd src && JANET_CALENDAR=demo JANET_WEATHER=demo JANET_SMART_HOME=demo JANET_EMAIL=demo python main.py
+```
+
+## Asking before acting
+
+Whisper mishears — a lot. That's harmless for a timer and dangerous for anything
+that writes to the outside world, so actions that are hard to undo go through a
+spoken confirmation (`utils/confirm.py`): JANET states the whole thing back and
+does it only if your **next** utterance is a yes.
+
+```
+you:   Janet, schedule a physio appointment tomorrow at 4 pm
+JANET: Shall I add Physio appointment tomorrow at 4 PM?
+you:   yes
+JANET: Added Physio appointment to your calendar.
+```
+
+Saying anything other than yes/no cancels it and is handled as a fresh command, and
+the request expires after a minute so a stray "yeah" later can't trigger it.
+
+Some things are refused outright rather than confirmed, because no wake word means
+one misheard sentence shouldn't be able to cause real damage:
+
+- **No power commands** — shutdown, reboot, suspend and logout aren't implemented at all.
+- **No locks, garage doors or alarm panels** — smart-home control is limited to lights, switches and fans.
+- **Reading email never marks it read** (IMAP `BODY.PEEK`), and JANET can only *reply* to a message, never compose to an arbitrary address.
+
 ## Getting started
 
 Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **normal user** (not `sudo` — a per-user PipeWire mic is unreachable as root).
@@ -42,8 +102,12 @@ Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **norma
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ollama pull qwen3:14b             # local LLM for GENERAL questions (needs Ollama installed)
+cp .env.example .env              # optional — only for calendar/weather/smart home/email
 cd src && python main.py          # runs from src/ — see the import note below
 ```
+
+Nothing in `.env` is required: the time, timers, alarms, reminders, maths, system
+control and the local LLM all work with no configuration at all.
 
 Then just talk. Silero VAD detects when you start and stop speaking (a short pre-roll buffer keeps your first word). Each utterance is transcribed, run through the two gates, and — if it's for JANET — acted on and spoken. The console shows the decision on every utterance:
 
@@ -74,8 +138,12 @@ This reads the labelled dataset in `data/text/{train,val}/`, fine-tunes `distilb
 src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
-  intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch · timeparse (alarm) · numwords (spoken numbers)
-  actions/           per-intent handlers (TIME, DATE, TIMER, CALC, GENERAL, ALARM so far)
+  intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
+                     parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
+  actions/           one handler per intent (time, date, timer, alarm, reminder, calc,
+                     calendar, weather, smart_home, email, system, general)
+  integrations/      calendar (CalDAV · Google · demo), weather (Open-Meteo · demo),
+                     smart home (Home Assistant · demo), email (IMAP/SMTP · demo)
   utils/             context, conversation memory (history.py), helpers
 data/
   text/              intent dataset (train/val), labels.txt, validate.py
@@ -90,4 +158,4 @@ data/
 
 ## Target stack
 
-Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local Ollama LLM fallback (Qwen3 14B, live) · Piper TTS (planned). Everything on-device.
+Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local Ollama LLM fallback (Qwen3 14B) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
