@@ -37,3 +37,7 @@ how has your day been
 do you ever get tired
 whats your favorite animal
 are you conscious
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+whats the capital of portugal
+who painted starry night
+how do i keep bananas from going brown

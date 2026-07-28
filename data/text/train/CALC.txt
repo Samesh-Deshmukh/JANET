@@ -102,3 +102,14 @@ whats the volume of a cube with side three
 what is the hypotenuse of a triangle with sides three and four
 whats the average of ten twenty and thirty
 calculate the mean of four six and eight
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+whats 30 percent of 80
+what is 15 percent of 240
+whats 25 percent of 60
+calculate 18 percent of 45
+how much is 5 percent of 300
+whats twelve percent of two hundred
+what is 75 percent of 120
+whats 33 percent of 99
+how much is 40 percent of 250
+what is 10 percent of 55

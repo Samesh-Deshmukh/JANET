@@ -127,3 +127,16 @@ whats it like being an ai
 do you have a favorite season
 whats your opinion on pineapple on pizza
 whos your favorite superhero
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+whats the capital of spain
+whats the capital of italy
+whats the capital of germany
+who is the prime minister of the uk
+how tall is mount everest
+why do we have seasons
+how do i make coffee without a machine
+whats the fastest animal on land
+whats the largest planet in the solar system
+explain how a fridge keeps things cold
+tell me a fact about the human brain
+how do i get rid of a headache naturally

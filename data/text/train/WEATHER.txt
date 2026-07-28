@@ -98,3 +98,31 @@ is there a frost warning tonight
 is it going to be above 90 today
 will it drop below 32 tonight
 is it 80 degrees out
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+will it rain today
+will it rain in the morning
+will it rain this weekend
+will it be raining tomorrow
+is rain coming tomorrow
+is it going to rain tomorrow morning
+is it going to rain later today
+is tomorrow going to be rainy
+whats the weather
+whats the weather today
+whats the weather tomorrow
+whats the weather in berlin
+whats the weather in dublin
+whats the weather in toronto
+whats the weather in sydney tomorrow
+whats the weather in rome right now
+whats the weather in bangalore today
+whats the weather like in london today
+whats the weather like on friday
+whats the weather like this morning
+whats the weather going to be like tomorrow
+hows the weather tomorrow
+hows the weather out there
+whats it going to be like tomorrow
+give me the forecast for tomorrow
+how warm is it tomorrow
+do i need a coat tomorrow

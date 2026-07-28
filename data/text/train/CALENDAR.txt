@@ -100,3 +100,37 @@ add a meeting at 12 on friday
 cancel my 2 oclock
 whats on my calendar on the 5th
 schedule a call at 4 pm
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+schedule a meeting for tomorrow at three
+schedule lunch with sarah on thursday
+schedule a dentist appointment for next friday
+schedule a call for monday morning
+book a call with the client for tuesday
+book a meeting with john at two
+book me a slot at four tomorrow
+add a call with alex at three
+add dinner with mom to my calendar on sunday
+add coffee with sarah to my calendar
+add a doctors appointment on tuesday to my calendar
+put lunch with john on my calendar for friday
+put the school play on my calendar for thursday
+put a haircut on my calendar for saturday
+create an event for the team lunch
+create a calendar event for the interview
+make a calendar entry for the workshop
+new event tomorrow at nine
+new meeting with the design team on monday
+pencil in a call with john for wednesday
+set up lunch with alex tomorrow
+set up a call for thursday afternoon
+am i free friday
+am i free on monday
+am i free later today
+am i free next tuesday
+am i busy tomorrow
+am i busy this evening
+am i busy on saturday
+do i have anything on friday
+is anything booked for thursday
+is my friday free
+am i open tomorrow afternoon

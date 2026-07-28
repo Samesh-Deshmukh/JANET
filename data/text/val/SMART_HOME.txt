@@ -22,3 +22,11 @@ turn on the living room speaker
 raise the garage door
 unlock the back door for me
 whats the bedroom temperature set to
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+turn on the hallway lamp
+switch off the kitchen fan for me
+turn off the lights in the kitchen
+are the porch lights on
+is the office lamp on
+lights on in the bedroom
+turn the fan off

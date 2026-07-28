@@ -101,3 +101,18 @@ alarm for 8 15
 set an alarm for 5 45 am
 wake me at 9
 alarm for 10 pm
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+cancel the alarm
+cancel my alarm
+cancel all my alarms
+cancel that alarm
+stop my alarm
+turn the alarm off
+delete the alarm
+remove my alarm
+get rid of my alarm
+set an alarm for six thirty am
+set an alarm for five am tomorrow
+wake me at seven
+whats my alarm set to
+do i have an alarm set

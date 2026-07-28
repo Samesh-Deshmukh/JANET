@@ -25,3 +25,11 @@ whats on my reminder list
 # digit forms (whisper often emits numerals)
 remind me in 30 minutes to stretch
 remind me at 8 to lock up
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+remind me in ten minutes to call dad
+remind me to take my vitamins at nine
+cancel my reminder about the call
+wipe my reminders
+what reminders do i have left
+whens my next reminder
+remind me to water the plants at six

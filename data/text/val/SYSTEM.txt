@@ -22,3 +22,13 @@ talk softer please
 whats wrong with you
 whats your status
 who are you
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+turn the volume down please
+volume all the way down
+set the volume to fifty
+mute the audio
+unmute the audio
+hows your volume
+what did you say just now
+say that one more time
+what all can you do

@@ -22,3 +22,12 @@ did i get a receipt in my email
 anything from customer support in my inbox
 check my email for the meeting invite
 tell me if sarah emailed me back
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+reply to that saying ill call you later
+reply saying i will be at the meeting
+reply to alex saying no
+send a reply saying im interested
+respond to sarah saying that works
+write back saying ill be late
+answer that message saying yes
+draft a reply saying thanks

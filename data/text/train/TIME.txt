@@ -94,3 +94,18 @@ whats the time zone in moscow
 whats the time zone in paris
 whats the time zone in vancouver
 whats todays time
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+how much of the day is left
+how many hours are left in the day
+how much longer is left in the day
+how much time is left before noon
+how much time is left until midnight
+how long until noon
+how long until midnight
+how long until five oclock
+whats the time here
+do you know the time
+can you tell me what time it is
+is it lunchtime yet
+what time have you got
+tell me what the time is

@@ -25,3 +25,12 @@ whats the status of my timers
 # digit forms (whisper often emits numerals)
 start a 15 minute timer
 set a timer for 3 minutes
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+how long is left on my timer
+how much longer until the timer is done
+hows the timer looking
+how many minutes remain on the timer
+cancel the running timer
+stop the timer now
+whats left on the countdown
+tell me the time remaining on the timer

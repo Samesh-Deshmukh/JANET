@@ -94,3 +94,14 @@ whats todays day
 whats todays weekday
 whats tomorrows weekday
 whats yesterdays date
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+what is the date now
+whats the date right now
+what is todays day
+what day of the month is today
+is today the third
+how many days until the end of the year
+whats the date in two weeks
+what is the date on monday
+tell me what the date is
+what day comes after today

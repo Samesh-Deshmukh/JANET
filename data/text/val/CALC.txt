@@ -29,3 +29,7 @@ what is the derivative of cosine of x
 what is six factorial
 convert twenty kilometers to miles
 whats the area of a triangle with base six and height four
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+whats 20 percent of 90
+what is 45 percent of 200
+how much is 60 percent of 150

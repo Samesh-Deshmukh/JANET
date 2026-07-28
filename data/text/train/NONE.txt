@@ -547,3 +547,42 @@ nobody in the room actually knew the answer
 he loves trivia but always gets the last question wrong
 that documentary explained it way better than school did
 the debate went on way longer than anyone expected
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+i really like pizza
+i love pizza more than pasta
+pizza is my favorite food
+i like coffee in the morning
+the weather today is nice
+its a nice day out today
+the weather has been lovely all week
+the weather turned nice this afternoon
+he set an alarm for the morning
+she set an alarm last night
+he set a timer for the pasta
+they set a reminder about the meeting
+we should schedule a trip sometime
+we should schedule lunch one of these days
+maybe we should schedule something next month
+i should schedule a checkup at some point
+she scheduled the meeting for us already
+he replied to that email already
+i replied saying it was fine
+she emailed me back yesterday
+i turned on the lights before i left
+he turned the volume up too high
+she muted the tv during the ads
+i cancelled the timer by accident
+we cancelled the meeting last week
+he reminded me about it yesterday
+i remind him every single day
+the calendar says the meeting is on friday
+my calendar is full next week
+she asked what time it was
+i checked the weather this morning
+he wanted to know the date
+they booked the room for us
+i booked a call with them already
+she added it to her calendar
+we set the volume too loud last night
+the timer went off a while ago
+my reminder never popped up

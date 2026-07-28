@@ -22,3 +22,7 @@ whats the date please
 whats the day today
 whats the julian date today
 whats yesterdays weekday
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+whats the date on friday
+what is the date this coming monday
+how many days until the end of the week

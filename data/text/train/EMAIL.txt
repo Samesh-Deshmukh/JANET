@@ -94,3 +94,37 @@ did i receive the contract over email
 did i receive the offer letter
 read me the email subject lines from today
 tell me if i have any new email
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+reply to that email saying i will be there
+reply to that saying ill be late
+reply saying thanks
+reply saying that works for me
+reply saying i cant make it
+reply saying yes that works
+reply saying no thank you
+reply saying ill get back to them
+reply saying sounds good
+reply saying im on my way
+reply to john saying yes
+reply to sarah saying im running late
+reply to the client saying we can meet friday
+reply to my manager saying ill send it today
+reply to that message saying thank you
+reply to the last email saying im interested
+reply to the email from john saying ill review it
+reply all saying im in
+reply to that email for me
+send a reply saying im on it
+send a reply saying ill confirm tomorrow
+send a quick reply saying thanks
+answer that email saying yes
+respond to that email saying im available
+respond saying ill be there at noon
+write back saying thank you
+write back to sarah saying yes
+email him back saying ill call later
+email her back saying got it
+tell them by email that ill be late
+draft a reply saying im interested
+draft a reply to sarah saying yes
+send an email to alex saying im running late

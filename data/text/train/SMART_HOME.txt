@@ -97,3 +97,33 @@ what is the temperature set to
 whats the living room thermostat set to
 whats the status of the front door
 whats the upstairs thermostat set to
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+turn on the living room lamp
+turn on the kitchen lights
+turn on the lights in the living room
+turn on the bedroom lights
+turn off the lights in here
+turn off the fan
+turn on the fan
+turn the lights on
+turn the lights off
+turn on the porch light
+turn off the tv in the bedroom
+switch off the bedroom fan
+switch off the living room lights
+switch on the hallway lights
+switch on the living room lights
+shut off the kitchen lights
+kill the lights in the bedroom
+dim the lights in the living room
+lights on in the kitchen
+lights off in the living room
+are the living room lights on
+are the office lights off
+is the kitchen light still on
+is the living room lamp on
+did i leave the porch light on
+is the bedroom fan on
+is the kitchen fan running
+are all the lights off downstairs
+is anything still on in the house

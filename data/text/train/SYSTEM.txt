@@ -94,3 +94,42 @@ you are too quiet
 you didnt hear that right
 youre barely audible
 youre way too loud right now
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+turn up the volume
+turn down the volume
+turn the volume up a bit
+turn the volume down a bit
+volume up
+volume up please
+volume down please
+bump the volume up
+drop the volume down
+set the volume to thirty
+set the volume to seventy
+set the volume to 60
+set the volume to half
+put the volume at twenty
+change the volume to eighty
+max out the volume
+mute it
+mute please
+mute the volume
+mute the sound
+unmute please
+unmute the sound
+unmute it
+turn the mute off
+whats the volume at
+whats your volume set to
+how loud are you right now
+what volume are you on
+what did you just say
+what was that you said
+can you say that one more time
+repeat what you just said
+say it one more time
+what are you able to do
+what things can you help with
+what can you help me with
+are you still listening
+you there

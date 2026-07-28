@@ -101,3 +101,37 @@ timer for 90 seconds
 give me a 20 minute timer
 set a 2 hour timer
 timer for 45 seconds
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+how long is left on it
+how long do i have left
+how long left
+tell me how long is left
+how much longer on the timer
+how much longer do i have
+how much is left on the timer
+how much time do i have left on the timer
+how much time is left on the countdown
+how long until it goes off
+how long until it beeps
+how long before the timer goes off
+whats the time remaining
+whats the remaining time on the timer
+how many seconds are left
+how many minutes are left
+how many minutes till the timer is up
+is there any time left on the timer
+tell me whats left on the timer
+check how much time is left
+check the time left on the timer
+how far along is the timer
+whats the countdown at
+wheres the timer at
+time left on the timer
+cancel my timer
+cancel that timer
+cancel the countdown
+stop my timer
+stop the countdown
+turn off the timer
+scrap the timer
+call off the timer

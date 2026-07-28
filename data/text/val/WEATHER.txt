@@ -25,3 +25,11 @@ whats the weather supposed to be like next week
 # digit forms (whisper often emits numerals)
 will it be over 100 tomorrow
 is it below 40 right now
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+will it rain on sunday
+whats the weather in madrid
+hows the weather looking tomorrow
+is it going to rain in the afternoon
+whats the weather in oslo tonight
+whats the weather like on saturday
+do i need an umbrella this evening

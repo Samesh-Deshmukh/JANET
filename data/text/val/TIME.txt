@@ -22,3 +22,8 @@ whats the time in india
 whats the time in phoenix
 whats the time on the clock
 whats the time please
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+how many hours are left today
+how long until three oclock
+whats the time here right now
+do you know the time right now

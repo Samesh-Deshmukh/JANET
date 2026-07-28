@@ -25,3 +25,12 @@ is my next meeting still on
 # digit forms (whisper often emits numerals)
 am i busy at 10 tomorrow
 when is my 9 am meeting
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+schedule a meeting with john for friday
+book a call with sarah at three
+add drinks with the team to my calendar
+put the recital on my calendar for sunday
+create an event for saturday morning
+am i free wednesday
+am i busy next monday
+do i have anything booked tomorrow evening

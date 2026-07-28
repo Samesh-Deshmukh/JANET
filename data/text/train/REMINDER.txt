@@ -100,3 +100,33 @@ remind me at 6 to call mom
 set a reminder for 3 pm
 remind me in 2 hours to leave
 remind me on the 15th about rent
+# new capability phrasings (timer queries, calendar create, email reply, volume, etc)
+remind me in ten minutes to call mom
+remind me to call mom later
+remind me to call grandma in twenty minutes
+remind me to take my pills at five
+remind me to take the medicine at eight
+remind me to take the tablets tonight
+remind me in ten minutes to check the rice
+remind me in ten minutes to move the car
+remind me to email the client at nine
+remind me to call the office in an hour
+remind me to start the dishwasher tonight
+remind me to take the chicken out at six
+remind me to bring my badge tomorrow
+remind me to lock the back door before bed
+remind me to charge the headphones tonight
+cancel my reminder
+cancel the reminder about the meeting
+cancel all my reminders
+cancel that reminder
+turn off my reminders
+get rid of my reminders
+drop that reminder
+whats on my reminder list today
+list my reminders
+what reminders are set
+do i have any reminders left
+tell me my reminders
+whats my next reminder
+when is my next reminder

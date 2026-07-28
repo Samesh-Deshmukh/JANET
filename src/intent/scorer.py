@@ -44,12 +44,19 @@ _COMMAND_WORDS = {
     # added after real-hardware testing (were missing -> clear commands ignored):
     "reply", "forward", "compose", "write", "draft", "book", "reschedule",
     "convert", "compute", "solve", "repeat", "email", "list",
+    # added when SYSTEM/volume control landed: "unmute" and "volume down" fired
+    # NO signals at all (score 0) and were dropped before the classifier ever
+    # ran, even though it was ~90% sure they were SYSTEM commands. Leading with
+    # "volume"/"louder" IS a command, so they belong here as head words.
+    "unmute", "volume", "louder", "quieter",
 }
 # Words tied to things JANET actually does — evidence it's a real request for it.
 _TASK_KEYWORDS = {
     "time", "date", "day", "timer", "alarm", "remind", "reminder", "weather",
     "forecast", "temperature", "light", "lights", "thermostat", "email", "mail",
     "message", "inbox", "calendar", "meeting", "appointment", "calculate", "news",
+    # things JANET gained handlers for later
+    "volume", "mute", "unmute", "event", "fan",
 }
 # Skipped when finding the "head" word, so "hey janet what time…" still reads as a
 # question. (The +50 janet points come from the substring check, not the head.)
