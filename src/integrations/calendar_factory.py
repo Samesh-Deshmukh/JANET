@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 from integrations.calendar_source import FakeCalendarSource
 from integrations.demo_calendar import demo_events
 from integrations.caldav_source import CalDAVSource
+from integrations.google_calendar_source import (
+    GoogleCalendarSource, is_configured as google_configured,
+)
 
 load_dotenv()
 
@@ -35,6 +38,11 @@ def _build_source():
     if os.environ.get("JANET_CALENDAR", "").lower() == "demo":
         # The fake calendar: sample events seeded around "now", no server needed.
         return FakeCalendarSource(demo_events(datetime.now()))
+    if os.environ.get("JANET_CALENDAR", "").lower() == "google" and google_configured():
+        # Constructing this is free — it authorizes lazily on the first request,
+        # so booting JANET never opens a browser. Run the one-time consent with
+        # `python -c "from integrations.google_calendar_source import authorize; authorize()"`.
+        return GoogleCalendarSource()
     url = os.environ.get("JANET_CALDAV_URL")
     user = os.environ.get("JANET_CALDAV_USER")
     password = os.environ.get("JANET_CALDAV_PASSWORD")

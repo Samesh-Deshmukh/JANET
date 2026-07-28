@@ -36,6 +36,11 @@ ollama==0.6.2            # thin client for the local Ollama server; needs `ollam
 caldav==3.2.1            # CalDAV client; pulls in icalendar + vobject
 icalendar==7.2.2         # imported directly for VEVENT parsing
 
+# --- Calendar integration (Google Calendar API v3) ---
+google-api-python-client==2.198.0   # the calendar v3 client (pulls in httplib2)
+google-auth-oauthlib==1.4.0         # the one-time installed-app OAuth consent flow
+google-auth-httplib2==0.4.0         # glues google-auth credentials onto httplib2
+
 # --- Vision (planned: src/vision) ---
 opencv-python==4.13.0.92
 
