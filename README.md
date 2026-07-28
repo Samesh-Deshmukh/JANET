@@ -11,8 +11,10 @@ Everything runs on-device. No cloud calls for core functions; no wake word to pr
 ```
 Mic ─► VAD ─► Whisper ─► [pending yes/no?] ─► Scorer ─► Classifier ─► Action ─► LLM ─► TTS
       Silero   (STT)       utils/confirm      (Layer 1)  (Layer 2)    handler   voice
-                                                                        │         │
-                                                                      facts ──────┘
+                                                                        │         │ ↑
+                                                                      facts ──────┘ │
+                                                                    read-only tools ┘
+                                                              (when the facts fall short)
 ```
 
 Nothing is spoken unless **both** gates agree the utterance is a real request *to JANET*:
@@ -58,6 +60,23 @@ JANET: I've set a timer for 5 minutes.          (fact: "Timer set for 5 minutes.
 you:   Janet, how much time is left?
 JANET: There's 4 minutes and 58 seconds left.
 ```
+
+**It can also go and look things up.** If what the action returned doesn't answer
+the question, JANET says something casual and fetches the rest itself:
+
+```
+you:   Janet, what's the weather?
+JANET: It's 22 degrees and partly cloudy in Pune.
+you:   Janet, what about in Delhi?
+JANET: Let me check.                        (calls get_weather(city="Delhi"))
+JANET: It's 22.4 degrees and partly cloudy in Delhi.
+```
+
+Those tools are **read-only** on purpose — weather, calendar, time, email, device
+state. JANET can look anything up, but it can't create an event, send mail or
+switch on a light without going through the confirmation below. There's no wake
+word and Whisper mishears, so looking something up and *changing* something are
+deliberately different risk classes. Lookups are capped at two per utterance.
 
 It also records *why* it said something (a one-line reasoning), and can decide a
 question needs real thought — saying something casual first so the pause isn't
@@ -192,7 +211,7 @@ This reads the labelled dataset in `data/text/{train,val}/`, fine-tunes `distilb
 src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
-  ai_core/           llm (the one model client) · responder (JANET's voice) · transcript
+  ai_core/           llm (the one model client) · responder (JANET's voice) · tools (read-only lookups) · transcript
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
                      parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
   actions/           one handler per intent (time, date, timer, alarm, reminder, calc,
