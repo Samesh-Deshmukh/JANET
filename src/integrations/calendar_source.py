@@ -19,6 +19,10 @@ class CalendarSource(Protocol):
         """Events overlapping [start, end), sorted by start."""
         ...
 
+    def create_event(self, event: "Event") -> None:
+        """Add an event to the calendar."""
+        ...
+
 
 class FakeCalendarSource:
     """In-memory source (test double + demo). Holds a fixed list of Events."""
@@ -29,3 +33,6 @@ class FakeCalendarSource:
     def events_between(self, start, end):
         hits = [e for e in self._events if e.start < end and e.end > start]
         return sorted(hits, key=lambda e: e.start)
+
+    def create_event(self, event):
+        self._events.append(event)

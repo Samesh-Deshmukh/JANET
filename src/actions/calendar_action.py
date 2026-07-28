@@ -6,8 +6,12 @@ from datetime import datetime, timedelta
 
 import caldav.lib.error
 
+from actions.alarm_action import resolve
 from intent.dateparse import parse_query
+from intent.eventparse import parse_event, is_create
 from integrations.calendar_factory import get_calendar_source
+from integrations.calendar_source import Event
+from utils import confirm
 
 # Narrow, operational failures only: server down / bad credentials. Real bugs
 # still propagate (same posture as general_action's Ollama catch).
@@ -73,11 +77,40 @@ def _format_free(events, label):
     return f"You have {n} event{'s' if n != 1 else ''} {label}."
 
 
+def _handle_create(source, ctx, now):
+    """Build the event, then ASK before writing it (see utils/confirm)."""
+    request = parse_event(ctx.query)
+    if not request["title"]:
+        return "What should I call the event?"
+    if request["time"] is None:
+        return "When should I schedule that?"
+
+    start, _hour24 = resolve(now, request["time"])
+    event = Event(
+        start=start,
+        end=start + timedelta(minutes=request["duration_minutes"]),
+        summary=request["title"].capitalize(),
+    )
+
+    def create():
+        try:
+            source.create_event(event)
+        except _CONN_ERRORS:
+            return "I couldn't reach your calendar."
+        return f"Added {event.summary} to your calendar."
+
+    confirm.request(create)
+    # State it back in full so a mis-transcription is obvious before it's written.
+    return f"Shall I add {event.summary} {_speak_when(event, now)}?"
+
+
 def handle(slots, ctx):
     source = get_calendar_source()
     if source is None:
         return "Your calendar isn't set up yet."
     now = datetime.now()
+    if is_create(ctx.query):
+        return _handle_create(source, ctx, now)
     req = parse_query(ctx.query.lower(), now)
     try:
         events = source.events_between(req["start"], req["end"])
