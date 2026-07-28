@@ -32,6 +32,10 @@ accelerate==1.14.0       # required by the HuggingFace Trainer for DistilBERT fi
 # --- LLM (local general-question fallback via Ollama) ---
 ollama==0.6.2            # thin client for the local Ollama server; needs `ollama pull qwen3:14b`
 
+# --- Calendar integration (CalDAV) ---
+caldav==3.2.1            # CalDAV client; pulls in icalendar + vobject
+icalendar==7.2.2         # imported directly for VEVENT parsing
+
 # --- Vision (planned: src/vision) ---
 opencv-python==4.13.0.92
 
