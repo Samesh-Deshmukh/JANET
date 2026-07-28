@@ -48,10 +48,14 @@ def respond(query, ctx):
     correct output when the utterance wasn't for JANET, so we no longer say a
     fallback line at every overheard sentence.
 
-    Layer 2 runs first here (we need its confidence to boost the addressing
-    score): the classifier must return a real intent it's sure of, AND the
-    confidence-boosted linguistic score must clear the threshold. Either veto
-    => None (silent).
+    A pending confirmation (utils/confirm) is answered FIRST, before either
+    layer — a bare "yes" has no linguistic signal and would be thrown away as
+    ambient speech.
+
+    Then Layer 1 (the cheap scorer) runs, and only if the utterance is
+    plausibly addressed do we pay for Layer 2: the classifier must return a
+    real intent it's sure of, AND the confidence-boosted linguistic score must
+    clear the threshold. Either veto => None (silent).
     """
     # Normalize once so both layers see the clean form the dataset used
     # ("What's the time?" -> "whats the time"); Whisper's caps/punctuation would

@@ -1,8 +1,9 @@
 # src/integrations/calendar_factory.py
-"""Choose the configured CalendarSource from env: demo, CalDAV, or None.
+"""Choose the configured CalendarSource from env: demo, Google, CalDAV, or None.
 
-Keeping the choice here means the handler never imports a specific backend —
-swapping CalDAV for Google later is a change to this file only.
+Keeping the choice here means the handler never imports a specific backend. That
+claim has since been tested: adding Google Calendar really was a change to this
+file only (plus the new backend itself) — the handler and its tests were untouched.
 """
 import os
 from datetime import datetime
