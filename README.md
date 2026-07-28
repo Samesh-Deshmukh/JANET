@@ -9,8 +9,8 @@ Everything runs on-device. No cloud calls for core functions; no wake word to pr
 ## The pipeline
 
 ```
-Mic ─► VAD ─► Whisper ─► normalize ─► Scorer ─► Classifier ─► Action ─► TTS
-      Silero   (STT)                  (Layer 1)  (Layer 2)     handler   Piper*
+Mic ─► VAD ─► Whisper ─► normalize ─► [pending yes/no?] ─► Scorer ─► Classifier ─► Action ─► TTS
+      Silero   (STT)                    utils/confirm      (Layer 1)  (Layer 2)     handler   Piper*
 ```
 
 Nothing is spoken unless **both** gates agree the utterance is a real request *to JANET*:
@@ -19,6 +19,10 @@ Nothing is spoken unless **both** gates agree the utterance is a real request *t
 2. **Classifier** (`intent/classifier.py`) — "What do they want?" A fine-tuned DistilBERT (13 intents, ~97% val accuracy). Also vetoes anything it reads as `NONE` (not a real intent) or is unsure about.
 
 If either gate says no, JANET stays silent — which matters a lot for an always-listening mic.
+
+The one thing that jumps the queue is an answer to a pending confirmation (see
+[Asking before acting](#asking-before-acting)) — a bare "yes" carries no linguistic
+signal at all, so the scorer would discard it as background chatter.
 
 ## Current capabilities
 
