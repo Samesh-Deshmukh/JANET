@@ -12,7 +12,7 @@ import os
 import time
 from dataclasses import dataclass
 
-from ai_core import llm, transcript
+from ai_core import llm, tools, transcript
 
 # The most important text in the file: these answers are READ ALOUD.
 #
@@ -40,6 +40,13 @@ SYSTEM_PROMPT = (
     "say no.\n"
     "- Use the conversation so far so follow-ups make sense. Don't repeat "
     "yourself word for word if you've just said something similar.\n"
+    "- If the FACTS don't cover what was asked, you may LOOK SOMETHING UP: set "
+    "tool to the one you need and put its arguments in tool_args. Only do this "
+    "when you genuinely lack the information — if the FACTS already answer it, "
+    "set tool to 'none' and just reply. When you do look something up, put a "
+    "short casual line in interim to say while you fetch it.\n"
+    "\n"
+    "Tools you can use:\n" + tools.catalogue() + "\n"
     "\n"
     "Also return:\n"
     "- reasoning: one short line on why you replied that way.\n"
@@ -69,10 +76,19 @@ RESPONSE_SCHEMA = {
         "reply": {"type": "string"},
         "reasoning": {"type": "string"},
         "need_deeper_thinking": {"type": "boolean"},
+        # An enum, so constrained decoding makes it IMPOSSIBLE for the model to
+        # name a tool that doesn't exist.
+        "tool": {"type": "string", "enum": tools.names()},
+        "tool_args": {"type": "object"},
         "interim": {"type": "string"},
     },
-    "required": ["reply", "reasoning", "need_deeper_thinking", "interim"],
+    "required": ["reply", "reasoning", "need_deeper_thinking", "tool",
+                 "tool_args", "interim"],
 }
+
+# How many extra lookups one utterance may trigger. Each costs ~2s, and a model
+# that keeps asking for one more would leave the user in silence forever.
+MAX_TOOL_ROUNDS = 2
 
 # Deep thinking works (~11s) but JANET is single-threaded, so the mic is deaf for
 # that whole window. Off until the owner turns it on deliberately.
@@ -148,14 +164,41 @@ def compose(query, intent=None, facts=None, history=None, speak=None,
     started = time.time()
     messages = _build_messages(query, intent, facts, history)
 
+    collected = [facts] if facts else []
     try:
         data = llm.chat(messages, schema=RESPONSE_SCHEMA)
+
+        # The model may ask to look something up. Run it, hand back the result,
+        # and let it answer again — capped so it can't keep stalling.
+        for _ in range(MAX_TOOL_ROUNDS):
+            wanted = (data.get("tool") or tools.NO_TOOL).strip()
+            if wanted == tools.NO_TOOL:
+                break
+            interim = (data.get("interim") or "").strip()
+            if interim and speak:
+                speak(interim)       # so the lookup isn't silent
+            result = tools.run(wanted, data.get("tool_args"))
+            if result is None:       # unknown tool: answer with what we have
+                break
+            print(f"🔧 Tool: {wanted}({data.get('tool_args')}) -> {result}")
+            collected.append(result)
+            messages.append({"role": "user", "content": f"FACTS: {result}"})
+            data = llm.chat(messages, schema=RESPONSE_SCHEMA)
+        else:
+            # Ran out of lookups while it still wanted more — make it answer
+            # with what it has, or the user just hears another stall line.
+            if (data.get("tool") or tools.NO_TOOL) != tools.NO_TOOL:
+                messages.append({"role": "system", "content":
+                                 "No more lookups are available. Answer now "
+                                 "using only the FACTS above."})
+                data = llm.chat(messages, schema=RESPONSE_SCHEMA)
     except llm.LLMUnavailable as exc:
         reply = _fallback(facts, exc)
         _record(query, intent, facts, reply, started, score, confidence)
         return reply
 
     _announced_outage = False        # the model is back
+    facts = "; ".join(collected) if collected else facts
     reply = Reply(
         text=(data.get("reply") or "").strip(),
         reasoning=(data.get("reasoning") or "").strip(),
