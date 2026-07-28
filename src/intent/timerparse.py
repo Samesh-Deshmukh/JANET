@@ -48,12 +48,17 @@ _QUESTION_RE = re.compile(
 )
 _TIMER_NOUN_RE = re.compile(r"\btimers?\b")
 # "how much time is left" never says the word "timer" — these words carry it.
-_STATUS_RE = re.compile(r"\b(?:left|remaining|running|going|status|done|up)\b")
+_STATUS_RE = re.compile(r"\b(?:left|remaining|running|going|status|done|up|longer)\b")
 
 # Politeness/address words that sit in front of the real opener.
 _FILLER_RE = re.compile(
     r"^(?:hey|ok|okay|yo|janet|please)\b\s*"
     r"|^(?:can|could|would|will)\s+you\b\s*"
+    # Conversational run-ups. Found in real use: "actually how long is left on
+    # that" wasn't recognised as a question, fell through to SET, and silently
+    # started an unwanted 5-minute timer. Anything in front of the real opener
+    # has to come off, or a mis-parse quietly *creates* a timer.
+    r"|^(?:actually|so|and|but|um|uh|well|wait|hang\s+on|alright|right)\b\s*"
 )
 
 # ---------------------------------------------------------------------------
