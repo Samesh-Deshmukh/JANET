@@ -34,10 +34,13 @@ def _handle(utterance, history):
     reply = respond(query, ctx)
     if reply is None:
         return                          # not addressed / not for JANET — stay silent
-    print(f"⚙️  Reply: {reply}")
-    say(reply)
-    # Remember this addressed exchange so later questions have context.
-    history.add(query, reply)
+    print(f"⚙️  Reply: {reply.text}")
+    if reply.reasoning:
+        print(f"💭 Why: {reply.reasoning}")
+    say(reply.text)
+    # Remember this addressed exchange so later questions have context — including
+    # what the action returned and why JANET answered that way.
+    history.add(query, reply.text, facts=reply.facts, reasoning=reply.reasoning)
 
 
 def main():

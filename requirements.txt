@@ -29,8 +29,12 @@ matplotlib==3.10.5
 transformers==5.2.0
 accelerate==1.14.0       # required by the HuggingFace Trainer for DistilBERT fine-tuning (intent/train.py)
 
-# --- LLM (local general-question fallback via Ollama) ---
-ollama==0.6.2            # thin client for the local Ollama server; needs `ollama pull qwen3:14b`
+# --- LLM ---
+# JANET talks to the model over the OpenAI-compatible /v1 HTTP API using
+# `requests` (already listed below), so there is no client library to install.
+# Point JANET_LLM_URL at either backend:
+#   llama.cpp  http://127.0.0.1:8081/v1   (default)
+#   Ollama     http://127.0.0.1:11434/v1
 
 # --- Calendar integration (CalDAV) ---
 caldav==3.2.1            # CalDAV client; pulls in icalendar + vobject

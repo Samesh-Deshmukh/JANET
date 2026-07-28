@@ -29,3 +29,6 @@ CLAUDE.md
 .claude/
 docs/
 .superpowers/
+
+# Conversation transcripts — private by definition, never commit
+data/transcripts/

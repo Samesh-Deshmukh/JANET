@@ -7,6 +7,7 @@ from actions import (
 from intent.intent import classify, CONF_THRESHOLD
 from intent.normalize import normalize
 from intent.scorer import score, THRESHOLD
+from ai_core import responder
 from utils import confirm
 
 # The classifier's confidence adds a small bonus to the addressing score:
@@ -44,9 +45,10 @@ def dispatch(intent, slots, ctx):
 def respond(query, ctx):
     """Full pipeline through JANET's two veto layers.
 
-    Returns the reply text to speak, or None to STAY SILENT — silence is the
-    correct output when the utterance wasn't for JANET, so we no longer say a
-    fallback line at every overheard sentence.
+    Returns an `ai_core.responder.Reply` to speak, or None to STAY SILENT — the
+    handler's string is no longer spoken directly; it becomes the FACTS the LLM
+    phrases. Silence is still the correct output when the utterance wasn't for
+    JANET, so we say nothing at all at an overheard sentence.
 
     A pending confirmation (utils/confirm) is answered FIRST, before either
     layer — a bare "yes" has no linguistic signal and would be thrown away as
@@ -60,6 +62,9 @@ def respond(query, ctx):
     # Normalize once so both layers see the clean form the dataset used
     # ("What's the time?" -> "whats the time"); Whisper's caps/punctuation would
     # otherwise make the scorer miss every signal and skew the classifier.
+    # The RAW form is kept for the responder: the LLM speaks better from natural
+    # text than from the stripped, lowercased form the two gates need.
+    raw_query = query
     query = normalize(query)
 
     # A pending confirmation is answered BEFORE the veto layers: a bare "yes"
@@ -70,7 +75,9 @@ def respond(query, ctx):
         answer = confirm.resolve(query)
         if answer is not None:
             print(f"✅ Confirmation: {query!r}")
-            return answer
+            # Even this goes through the responder, so JANET has ONE voice —
+            # the outcome of a confirmed action is spoken like everything else.
+            return responder.compose(raw_query, "CONFIRM", answer, ctx.history, ctx.speak)
 
     # Layer 1 (cheap) runs first. If the linguistic score is so low that even a
     # maxed-out confidence bonus couldn't reach the threshold, it can't be
@@ -100,7 +107,8 @@ def respond(query, ctx):
     if not addressed:
         return None                              # borderline but not rescued -> silent
 
-    reply = dispatch(label, slots, ctx)
-    if reply is None:
-        return "I can't help with that yet."     # addressed + known intent, no handler built
-    return reply
+    # The handler no longer speaks: whatever it returns is the FACTS, and the
+    # responder turns those facts + the conversation into what JANET says.
+    # GENERAL returns None on purpose — nothing to report, the LLM just answers.
+    facts = dispatch(label, slots, ctx)
+    return responder.compose(raw_query, label, facts, ctx.history, ctx.speak)
