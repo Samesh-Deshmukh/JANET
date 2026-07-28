@@ -79,7 +79,10 @@ def chat(messages, schema=None, max_tokens=400, timeout=TIMEOUT_S):
         content = response.json()["choices"][0]["message"]["content"]
     except (requests.RequestException, KeyError, IndexError, ValueError) as exc:
         # ValueError covers a non-JSON body; Key/IndexError an unexpected shape.
-        raise LLMUnavailable(f"{type(exc).__name__}: {exc}") from exc
+        # urllib3's connection errors are a paragraph long — the owner watches
+        # this console live, so keep it to one readable line.
+        detail = " ".join(str(exc).split())[:90]
+        raise LLMUnavailable(f"{type(exc).__name__}: {detail}") from exc
 
     if schema is None:
         return split_thinking(content)
