@@ -2,7 +2,7 @@
 from actions import (
     time_action, date_action, timer_action, calc_action, general_action,
     alarm_action, calendar_action, weather_action, smart_home_action,
-    system_action,
+    system_action, reminder_action,
 )
 from intent.intent import classify, CONF_THRESHOLD
 from intent.normalize import normalize
@@ -27,6 +27,7 @@ REGISTRY = {
     "WEATHER": weather_action.handle,
     "SMART_HOME": smart_home_action.handle,
     "SYSTEM": system_action.handle,
+    "REMINDER": reminder_action.handle,
 }
 
 

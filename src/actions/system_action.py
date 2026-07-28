@@ -30,12 +30,14 @@ STEP = 10
 # never read out a long list over voice.
 #
 # KEEP IN SYNC with intent/dispatch.py's REGISTRY (the real list of built
-# handlers: TIME, DATE, TIMER, ALARM, CALC, GENERAL, SYSTEM). It's a plain
-# constant on purpose — importing dispatch from here would be a circular import,
-# since dispatch imports this module.
+# handlers: TIME, DATE, TIMER, ALARM, CALC, GENERAL, CALENDAR, WEATHER,
+# SMART_HOME, REMINDER, EMAIL, SYSTEM). It's a plain constant on purpose —
+# importing dispatch from here would be a circular import, since dispatch
+# imports this module.
 CAPABILITIES = (
-    "I can tell you the time and date, set timers and alarms, do maths, "
-    "control my volume, and answer general questions. Just talk to me, "
+    "I can tell you the time and date, set timers, alarms and reminders, do "
+    "maths, check your calendar, the weather and your email, control your "
+    "smart home and my volume, and answer general questions. Just talk to me, "
     "there's no wake word."
 )
 
