@@ -77,7 +77,8 @@ def respond(query, ctx):
             print(f"✅ Confirmation: {query!r}")
             # Even this goes through the responder, so JANET has ONE voice —
             # the outcome of a confirmed action is spoken like everything else.
-            return responder.compose(raw_query, "CONFIRM", answer, ctx.history, ctx.speak)
+            return responder.compose(raw_query, "CONFIRM", answer, ctx.history,
+                                     ctx.speak, score=None, confidence=None)
 
     # Layer 1 (cheap) runs first. If the linguistic score is so low that even a
     # maxed-out confidence bonus couldn't reach the threshold, it can't be
@@ -111,4 +112,7 @@ def respond(query, ctx):
     # responder turns those facts + the conversation into what JANET says.
     # GENERAL returns None on purpose — nothing to report, the LLM just answers.
     facts = dispatch(label, slots, ctx)
-    return responder.compose(raw_query, label, facts, ctx.history, ctx.speak)
+    # score/confidence don't change the reply — they go into the transcript so the
+    # log shows WHY this utterance got through both gates.
+    return responder.compose(raw_query, label, facts, ctx.history, ctx.speak,
+                             score=combined, confidence=confidence)

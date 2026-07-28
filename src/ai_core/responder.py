@@ -117,20 +117,33 @@ def _build_messages(query, intent, facts, history):
     return messages
 
 
-def _fallback(facts, reason):
-    """No model: speak the handler's own words, and say why once."""
+def _fallback(facts, reason, offline=True):
+    """Speak the handler's own words instead of the model's.
+
+    `offline` distinguishes "the server is down" (worth telling the user once,
+    because every reply will be blunt until it's back) from "the server answered
+    but the answer was empty" — a one-off glitch where claiming an outage would
+    be a lie.
+    """
     global _announced_outage
     text = facts or NO_FACTS_FALLBACK
-    if not _announced_outage:
+    if offline and not _announced_outage:
         _announced_outage = True
         text = f"{OUTAGE_NOTE} {text}"
-    print(f"⚠  LLM unavailable ({reason}) — falling back to canned reply")
+    print(f"⚠  LLM fallback ({reason}) — using the canned reply")
     return Reply(text=text, reasoning="llm unavailable", facts=facts or "",
                  used_fallback=True)
 
 
-def compose(query, intent=None, facts=None, history=None, speak=None):
-    """Turn facts + context into what JANET says. Never raises for an outage."""
+def compose(query, intent=None, facts=None, history=None, speak=None,
+            score=None, confidence=None):
+    """Turn facts + context into what JANET says. Never raises for an outage.
+
+    `score`/`confidence` are the two gates' verdicts. They don't affect the reply
+    at all — they're threaded through purely so the transcript records WHY this
+    utterance was acted on, which is what makes the log usable for tuning the
+    scorer and the classifier later.
+    """
     global _announced_outage
     started = time.time()
     messages = _build_messages(query, intent, facts, history)
@@ -139,7 +152,7 @@ def compose(query, intent=None, facts=None, history=None, speak=None):
         data = llm.chat(messages, schema=RESPONSE_SCHEMA)
     except llm.LLMUnavailable as exc:
         reply = _fallback(facts, exc)
-        _record(query, intent, facts, reply, started)
+        _record(query, intent, facts, reply, started, score, confidence)
         return reply
 
     _announced_outage = False        # the model is back
@@ -168,16 +181,19 @@ def compose(query, intent=None, facts=None, history=None, speak=None):
             print(f"⚠  deep thinking failed ({exc}) — keeping the quick answer")
 
     if not reply.text:
-        reply = _fallback(facts, "model returned an empty reply")
+        # The server answered — it just said nothing. Not an outage.
+        reply = _fallback(facts, "model returned an empty reply", offline=False)
 
-    _record(query, intent, facts, reply, started)
+    _record(query, intent, facts, reply, started, score, confidence)
     return reply
 
 
-def _record(query, intent, facts, reply, started):
+def _record(query, intent, facts, reply, started, score=None, confidence=None):
     transcript.log(
         query=query,
         intent=intent,
+        score=score,
+        confidence=confidence,
         facts=facts,
         reply=reply.text,
         reasoning=reply.reasoning,
