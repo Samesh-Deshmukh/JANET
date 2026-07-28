@@ -19,6 +19,8 @@ def demo_messages(now):
             date=now - timedelta(minutes=20),
             snippet="Demo message. The draft is ready for your review.",
             unread=True,
+            reply_to="alex.chen@example.com",
+            message_id="<demo-alex-1@example.com>",
         ),
         Message(
             sender="Mom",
@@ -26,6 +28,8 @@ def demo_messages(now):
             date=now - timedelta(hours=3),
             snippet="Demo message. Are you free around six?",
             unread=True,
+            reply_to="mom@example.com",
+            message_id="<demo-mom-1@example.com>",
         ),
         Message(
             sender="JANET Demo",
@@ -33,6 +37,8 @@ def demo_messages(now):
             date=now - timedelta(hours=6),
             snippet="Demo message. Nothing here is real mail.",
             unread=True,
+            reply_to="demo@example.com",
+            message_id="<demo-janet-1@example.com>",
         ),
         Message(
             sender="Priya Raman",
@@ -40,6 +46,8 @@ def demo_messages(now):
             date=now - timedelta(days=1),
             snippet="Demo message. Payment went out on Monday.",
             unread=False,
+            reply_to="priya.raman@example.com",
+            message_id="<demo-priya-1@example.com>",
         ),
         Message(
             sender="Weekly Digest",
@@ -47,5 +55,7 @@ def demo_messages(now):
             date=now - timedelta(days=2),
             snippet="Demo message. Five stories you missed.",
             unread=False,
+            reply_to="digest@example.com",
+            message_id="<demo-digest-1@example.com>",
         ),
     ]

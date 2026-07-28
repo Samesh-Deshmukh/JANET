@@ -1,11 +1,16 @@
 # src/integrations/imap_source.py
 """IMAP-backed EmailSource, using only the standard library (imaplib + email).
 
-READ-ONLY, twice over: the mailbox is selected with readonly=True and bodies are
-fetched with BODY.PEEK[] instead of BODY[]. A plain BODY[] fetch sets the \\Seen
-flag, so merely asking "what's in my inbox?" would silently mark your mail as
-read — a real, user-visible side effect we must never cause. There is no send
-path here (see integrations/email_source.py for why).
+THE READS ARE READ-ONLY, twice over: the mailbox is selected with readonly=True
+and bodies are fetched with BODY.PEEK[] instead of BODY[]. A plain BODY[] fetch
+sets the \\Seen flag, so merely asking "what's in my inbox?" would silently mark
+your mail as read — a real, user-visible side effect we must never cause.
+
+Sending is NOT done here. IMAP cannot send at all; that needs SMTP, a different
+server on a different port. So this class *composes* an optional
+smtp_sender.SMTPSender and delegates send_reply to it, which keeps the one
+irreversible operation out of the file whose job is to change nothing, and lets
+a mailbox be readable with no way to send (can_send() then answers False).
 
 Parsing (_to_message) is a pure function over raw message bytes, so it can be
 tested offline on a sample email; only the class needs a server.
@@ -83,6 +88,18 @@ def _snippet(msg, limit=160):
     return text[:limit].strip()
 
 
+def _reply_address(msg, from_address):
+    """Where a reply to this message should go.
+
+    A sender can ask for replies elsewhere with a Reply-To header (mailing
+    lists and "no-reply" senders do this constantly), and RFC 5322 says that
+    header wins over From when it is present. Falls back to the From address,
+    and to "" when neither parses — the handler treats "" as "can't reply".
+    """
+    _name, address = parseaddr(_decode(msg.get("Reply-To")))
+    return address or from_address
+
+
 def _to_message(raw, unread=True):
     """Raw RFC-822 message bytes -> Message. Pure: no network, no state."""
     msg = email.message_from_bytes(raw)
@@ -95,6 +112,10 @@ def _to_message(raw, unread=True):
         date=_header_date(msg.get("Date")),
         snippet=_snippet(msg),
         unread=unread,
+        reply_to=_reply_address(msg, address),
+        # Kept exactly as it appears, angle brackets included: In-Reply-To and
+        # References must quote the id verbatim or the thread doesn't match.
+        message_id=(msg.get("Message-ID") or "").strip(),
     )
 
 
@@ -102,12 +123,16 @@ class IMAPSource:
     """Reads an IMAP mailbox over SSL. Connects per call and always logs out —
     a voice assistant asks rarely, so a pooled connection isn't worth the state."""
 
-    def __init__(self, host, user, password, port=993, mailbox="INBOX"):
+    def __init__(self, host, user, password, port=993, mailbox="INBOX", sender=None):
         self._host = host
         self._user = user
         self._password = password
         self._port = port
         self._mailbox = mailbox
+        # An SMTPSender, or None when sending isn't configured. Passed in by the
+        # factory rather than built here, so this file never reads the
+        # environment and can be constructed in a test with a stub sender.
+        self._sender = sender
 
     def unread_count(self):
         return self._with_connection(self._count_unseen)
@@ -115,6 +140,18 @@ class IMAPSource:
     def recent(self, limit=5):
         # a lambda so _with_connection can hand the open connection to the work
         return self._with_connection(lambda conn: self._fetch_recent(conn, limit))
+
+    # --- the one write path (delegated to SMTP) ------------------------------
+
+    def can_send(self):
+        return self._sender is not None
+
+    def send_reply(self, message, body):
+        if self._sender is None:
+            # The handler checks can_send() first, so this is a backstop: better
+            # a friendly "couldn't send" than an AttributeError on None.
+            raise EmailUnavailable("sending is not configured")
+        self._sender.send_reply(message, body)
 
     # --- connection plumbing -------------------------------------------------
 
