@@ -4,13 +4,15 @@
 
 Everything runs on-device. No cloud calls for core functions; no wake word to press or say — JANET listens continuously and works out for itself when you're talking to it.
 
-> **Status: working prototype.** The audio pipeline, the intent brain (addressing scorer + trained classifier), and **every intent handler** are built: time, date, timers, alarms, reminders, maths, calendar, weather, smart home, email, system control, and open-ended questions answered by a local LLM (Ollama / Qwen3 14B). This is also a personal learning project — the code favours being understandable over clever.
+> **Status: working prototype.** The audio pipeline, the intent brain (addressing scorer + trained classifier), and **every intent handler** are built: time, date, timers, alarms, reminders, maths, calendar, weather, smart home, email, system control, and open-ended questions. Since the latest change, **a local LLM does all the talking** — handlers produce facts, the model turns them into speech. This is also a personal learning project — the code favours being understandable over clever.
 
 ## The pipeline
 
 ```
-Mic ─► VAD ─► Whisper ─► normalize ─► [pending yes/no?] ─► Scorer ─► Classifier ─► Action ─► TTS
-      Silero   (STT)                    utils/confirm      (Layer 1)  (Layer 2)     handler   Piper*
+Mic ─► VAD ─► Whisper ─► [pending yes/no?] ─► Scorer ─► Classifier ─► Action ─► LLM ─► TTS
+      Silero   (STT)       utils/confirm      (Layer 1)  (Layer 2)    handler   voice
+                                                                        │         │
+                                                                      facts ──────┘
 ```
 
 Nothing is spoken unless **both** gates agree the utterance is a real request *to JANET*:
@@ -44,7 +46,42 @@ Every intent the classifier recognises now has a handler:
 
 Anything JANET decides wasn't addressed to it gets **silence**, not a reply.
 
-**GENERAL** questions ("what's the capital of France?") go to a local **Ollama** model (`qwen3:14b` by default, a one-line config constant in `actions/general_action.py`) with a brevity prompt so answers stay short and speakable. If Ollama isn't running JANET says so instead of crashing. Everything stays on-device.
+## The LLM does the talking
+
+Handlers don't speak any more. A handler runs, returns a short factual string,
+and a **local LLM** turns those facts plus the conversation into what you
+actually hear — so JANET has one voice everywhere and knows what was just said:
+
+```
+you:   Janet, set a timer for 5 minutes
+JANET: I've set a timer for 5 minutes.          (fact: "Timer set for 5 minutes.")
+you:   Janet, how much time is left?
+JANET: There's 4 minutes and 58 seconds left.
+```
+
+It also records *why* it said something (a one-line reasoning), and can decide a
+question needs real thought — saying something casual first so the pause isn't
+dead air:
+
+```
+you:   Janet, if a train leaves at 3:40pm at 80km/h and another at 4:10pm at 110km/h, when does it catch up?
+JANET: hang on, let me think about that one
+JANET: The first train has a 30-minute head start, covering 40 km. The second
+       gains 30 km/h, so it takes 1 hour 20 minutes. They meet at 5:30 pm.
+```
+
+That deeper mode is off by default (`JANET_DEEP_THINKING=1`) because it takes
+~11–20s and JANET is single-threaded, so the mic is deaf while it thinks.
+
+Everything — query, facts, reasoning, thinking, reply — is written to a
+gitignored transcript in `data/transcripts/`.
+
+**If the model is unavailable**, JANET falls back to the handlers' own plain
+strings and tells you once that its replies will be basic for now, rather than
+going silent.
+
+The backend is just a URL (`JANET_LLM_URL`): a local **llama.cpp** server by
+default, or **Ollama**. Everything stays on-device either way.
 
 JANET also keeps a **short-term conversation memory** (`utils/history.py`) — the last few addressed exchanges are fed back to the LLM, so follow-ups work: *"what's the capital of France?"* → *"Paris"*, then *"what about Germany?"* → *"Berlin."* It's in-memory and resets on restart.
 
@@ -105,10 +142,23 @@ Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **norma
 ```bash
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-ollama pull qwen3:14b             # local LLM for GENERAL questions (needs Ollama installed)
-cp .env.example .env              # optional — only for calendar/weather/smart home/email
+cp .env.example .env              # optional — see below
 cd src && python main.py          # runs from src/ — see the import note below
 ```
+
+**You need a local LLM running**, since it is JANET's voice. Either works:
+
+```bash
+# llama.cpp (default) — fastest if you give it the whole GPU
+llama-server -m /path/to/qwen3-14b-instruct-q4_k_m.gguf -ngl 999 -c 8192 --port 8081
+
+# or Ollama, with JANET_LLM_URL=http://127.0.0.1:11434/v1 in your .env
+ollama pull qwen3:14b && ollama serve
+```
+
+Don't run both at once on one GPU: the second copy of the weights gets squeezed
+onto the CPU and every reply becomes 3-5x slower. Without any model JANET still
+works, but falls back to plain canned replies and says so.
 
 Nothing in `.env` is required: the time, timers, alarms, reminders, maths, system
 control and the local LLM all work with no configuration at all.
@@ -142,16 +192,18 @@ This reads the labelled dataset in `data/text/{train,val}/`, fine-tunes `distilb
 src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
+  ai_core/           llm (the one model client) · responder (JANET's voice) · transcript
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
                      parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
   actions/           one handler per intent (time, date, timer, alarm, reminder, calc,
                      calendar, weather, smart_home, email, system, general)
   integrations/      calendar (CalDAV · Google · demo), weather (Open-Meteo · demo),
                      smart home (Home Assistant · demo), email (IMAP/SMTP · demo)
-  utils/             context, conversation memory (history.py), helpers
+  utils/             context, conversation memory (history.py), confirm gate, helpers
 data/
   text/              intent dataset (train/val), labels.txt, validate.py
   models/            trained model (gitignored)
+  transcripts/       per-day JSONL of every turn (gitignored)
 ```
 
 ## Principles
@@ -162,4 +214,4 @@ data/
 
 ## Target stack
 
-Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local Ollama LLM fallback (Qwen3 14B) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
+Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
