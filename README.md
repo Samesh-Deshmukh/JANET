@@ -176,6 +176,41 @@ one misheard sentence shouldn't be able to cause real damage:
 - **No locks, garage doors or alarm panels** — smart-home control is limited to lights, switches and fans.
 - **Reading email never marks it read** (IMAP `BODY.PEEK`), and JANET can only *reply* to a message, never compose to an arbitrary address.
 
+## JANET as an agent
+
+JANET can run code, work with files, and **propose changes to its own source** —
+all behind permission, and all contained:
+
+| What | Where it runs | How it's approved |
+|---|---|---|
+| Run code / commands | **bubblewrap sandbox** — no home, no network, no credentials | spoken "yes" |
+| Create/edit/delete files | a workspace directory, not your disk | spoken "yes" |
+| Look at the real machine | a read-only allowlist (`git status`, `nvidia-smi`, …) | spoken "yes" |
+| **Edit its own code** | a git branch, tested, never `master` | **you read the diff** |
+
+The last row is the important one. You can hear a summary; you cannot hear a
+diff — so a spoken "yes" only authorises JANET to *write a proposal*:
+
+```
+JANET: Shall I make the timer understand "how much longer"?
+you:   yes
+JANET: I've written the design to docs/janet_changes/… — have a read.
+you:   go ahead
+JANET: Done, on branch janet/20260729-…  Syntax clean, 30/30 smoke passed.
+       Review the diff and merge it if you're happy.
+```
+
+JANET never merges and never restarts itself. Some files it will simply refuse
+to touch — the confirmation gate, the addressing gate, the sandbox, and this
+list — because *"remove the confirmation gate"* is otherwise a perfectly valid
+request. Change those by hand or not at all.
+
+Run the same checks yourself any time:
+
+```bash
+venv/bin/python tools/smoke.py     # 30 checks over the real pipeline
+```
+
 ## Getting started
 
 Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **normal user** (not `sudo` — a per-user PipeWire mic is unreachable as root).
@@ -234,7 +269,8 @@ src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
   ai_core/           llm (the one model client) · responder (JANET's voice) · tools (read-only lookups)
-                     sandbox (bubblewrap: run code safely) · workspace (confined files) · host (read-only allowlist)
+                     sandbox (bubblewrap) · workspace (confined files) · host (read-only allowlist)
+                     selfmod (JANET editing its own code, reviewed)
                      addressing (rescues follow-ups) · transcript
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
                      parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
