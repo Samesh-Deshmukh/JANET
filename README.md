@@ -234,7 +234,7 @@ src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
   ai_core/           llm (the one model client) · responder (JANET's voice) · tools (read-only lookups)
-                     sandbox (bubblewrap: run code safely)
+                     sandbox (bubblewrap: run code safely) · workspace (confined files) · host (read-only allowlist)
                      addressing (rescues follow-ups) · transcript
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
                      parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
