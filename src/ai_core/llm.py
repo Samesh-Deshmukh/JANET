@@ -55,6 +55,12 @@ def split_thinking(text):
     """
     match = _THINK.search(text)
     if not match:
+        # An OPENING tag with no close means the model ran out of tokens while
+        # still reasoning — measured: a code request came back as 17k characters
+        # of <think> and no answer at all. Returning that as the "answer" would
+        # hand the caller reasoning it would then try to parse (or speak).
+        if "<think>" in text:
+            return text.strip(), ""
         return "", text.strip()
     return match.group(1).strip(), _THINK.sub("", text, count=1).strip()
 

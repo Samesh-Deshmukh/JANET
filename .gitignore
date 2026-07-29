@@ -32,3 +32,6 @@ docs/
 
 # Conversation transcripts — private by definition, never commit
 data/transcripts/
+
+# Design docs JANET writes about its own changes — local proposals, not history
+docs/janet_changes/
