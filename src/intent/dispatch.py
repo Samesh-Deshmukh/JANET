@@ -7,7 +7,7 @@ from actions import (
 from intent.intent import classify, CONF_THRESHOLD
 from intent.normalize import normalize
 from intent.scorer import score, THRESHOLD
-from ai_core import responder
+from ai_core import addressing, responder
 from utils import confirm
 
 # The classifier's confidence adds a small bonus to the addressing score:
@@ -40,6 +40,26 @@ def dispatch(intent, slots, ctx):
     if handler is None:
         return None
     return handler(slots, ctx)
+
+
+def _rescue(raw_query, ling, ctx, why):
+    """Before going silent, ask the LLM whether it was being talked to.
+
+    Both gates judge one sentence alone, so a follow-up like "and tomorrow?" is
+    invisible to them — the LLM is the only part of JANET holding the
+    conversation. A rescued utterance goes to GENERAL, which lets the responder
+    answer it and call whatever tool it needs.
+    """
+    if not addressing.should_check(ling, ctx.history, THRESHOLD - CONF_BONUS_SCALE):
+        print(f"🛡  {why} → ignored")
+        return None
+    addressed, reason = addressing.is_addressed(raw_query, ctx.history)
+    if not addressed:
+        print(f"🤔 {why} → not for me ({reason})")
+        return None
+    print(f"🤔 {why} → rescued: {reason}")
+    return responder.compose(raw_query, "GENERAL", None, ctx.history, ctx.speak,
+                             score=ling)
 
 
 def respond(query, ctx):
@@ -87,15 +107,15 @@ def respond(query, ctx):
     ling, breakdown = score(query)
     detail = ", ".join(f"{name} +{pts}" for name, pts in breakdown) or "no signals"
     if ling < THRESHOLD - CONF_BONUS_SCALE:
-        print(f"🛡  Score: {ling} ({detail}) → ignored (classifier skipped)")
-        return None
+        return _rescue(raw_query, ling, ctx, f"Score: {ling} ({detail})")
 
     # Plausibly addressed -> we need the classifier anyway (for the intent + the
     # NONE veto), so run it now.
     label, confidence, slots = classify(query)
     if label == "NONE" or confidence < CONF_THRESHOLD:
-        print(f"🧠 Intent: {label} ({confidence:.0%}) — ignored")
-        return None                              # NONE / low confidence -> stay silent
+        # Half of all missed follow-ups die here, not at the scorer: "how about
+        # friday" passes the scorer at 40 then gets only 38% on CALENDAR.
+        return _rescue(raw_query, ling, ctx, f"Intent: {label} ({confidence:.0%})")
     print(f"🧠 Intent: {label} ({confidence:.0%})")
 
     # The confidence bonus is only needed when the linguistic score fell short --
@@ -106,7 +126,7 @@ def respond(query, ctx):
     addressed = combined >= THRESHOLD
     print(f"🛡  Score: {shown} ({detail}) → {'addressed' if addressed else 'ignored'}")
     if not addressed:
-        return None                              # borderline but not rescued -> silent
+        return _rescue(raw_query, ling, ctx, f"Score: {shown} borderline")
 
     # The handler no longer speaks: whatever it returns is the FACTS, and the
     # responder turns those facts + the conversation into what JANET says.
