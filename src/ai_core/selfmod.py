@@ -249,6 +249,40 @@ def write_code(change, file_contents):
     return files, (payload.get("notes") or "").strip()
 
 
+def audit_change(original_texts, new_texts):
+    """Flag things a change removed that nobody asked it to remove.
+
+    This exists because prompting FAILED. The code prompt says, explicitly, to
+    preserve every comment and docstring — and the model deleted the module
+    docstring anyway, twice, on two different runs (189 lines -> 172). Tests
+    can't object: behaviour is identical, so syntax passes and every smoke check
+    passes.
+
+    So instead of trusting the instruction, compare before and after and say
+    plainly what vanished. JANET reports these; the owner decides.
+    """
+    warnings = []
+    for path, new in new_texts.items():
+        old = original_texts.get(path)
+        if old is None:
+            continue
+        old_lines, new_lines = len(old.splitlines()), len(new.splitlines())
+        if new_lines < old_lines * 0.9:
+            warnings.append(
+                f"{path}: shrank {old_lines} -> {new_lines} lines "
+                f"({old_lines - new_lines} removed)")
+        old_docs, new_docs = old.count('"""'), new.count('"""')
+        if new_docs < old_docs:
+            warnings.append(
+                f"{path}: lost {(old_docs - new_docs) // 2 or 1} docstring(s)")
+        old_comments = sum(1 for l in old.splitlines() if l.lstrip().startswith("#"))
+        new_comments = sum(1 for l in new.splitlines() if l.lstrip().startswith("#"))
+        if new_comments < old_comments * 0.9:
+            warnings.append(
+                f"{path}: lost {old_comments - new_comments} comment lines")
+    return warnings
+
+
 def apply_on_branch(change):
     """Create a branch, write the files, commit. Returns the branch name."""
     check_paths(change.files)
@@ -274,7 +308,7 @@ def apply_on_branch(change):
     return branch, original
 
 
-def run_tests(changed_paths):
+def run_tests(changed_paths, audit_warnings=()):
     """Syntax, import, then the full smoke suite. Returns (ok, report).
 
     **What this cannot catch, and why the human review exists.** On the first
@@ -286,6 +320,11 @@ def run_tests(changed_paths):
     """
     lines = []
     ok = True
+
+    # What the change REMOVED. Not a pass/fail — the owner decides — but it must
+    # be said out loud, because no test will ever mention it.
+    for warning in audit_warnings:
+        lines.append(f"removed: {warning}")
 
     # 1. Syntax. The failure that matters most: a syntax error in dispatch.py
     # means JANET won't start, and you can't voice-fix something that isn't
