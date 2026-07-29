@@ -205,6 +205,19 @@ to touch — the confirmation gate, the addressing gate, the sandbox, and this
 list — because *"remove the confirmation gate"* is otherwise a perfectly valid
 request. Change those by hand or not at all.
 
+It also reports what a change **removed**, not just whether it passed:
+
+```
+Syntax clean, 30/30 smoke passed.
+removed: src/intent/timerparse.py: lost 1 docstring(s)
+```
+
+That check exists because the model really does this. Asked for a small change,
+it twice rewrote a whole file and deleted its module docstring — passing every
+test both times, because the behaviour was identical. Telling it not to didn't
+help, so JANET now diffs before and after and says what vanished. Tests prove a
+change didn't *break* anything; only reading the diff shows what it *took away*.
+
 Run the same checks yourself any time:
 
 ```bash
