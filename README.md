@@ -24,6 +24,28 @@ Nothing is spoken unless **both** gates agree the utterance is a real request *t
 
 If either gate says no, JANET stays silent — which matters a lot for an always-listening mic.
 
+**With one exception.** Both gates judge a single sentence with no idea what JANET
+just said, so short follow-ups fall straight through them:
+
+```
+you:   Janet, what's the weather?
+JANET: It's 22 degrees and partly cloudy in Pune.
+you:   and tomorrow?                      ← scores 0. Silence.
+```
+
+So before going quiet, JANET asks the LLM — the only part of it that actually has
+the conversation — whether it was being talked to. If yes, the utterance is
+answered and can use the tools below:
+
+```
+you:   and tomorrow?
+JANET: It's going to be rainy in Pune tomorrow, with a high of 27.6C.
+```
+
+That check only runs when JANET spoke in the last 30 seconds, or the score was
+near the line — so a quiet room, or a background video with no conversation in
+progress, still costs nothing at all.
+
 The one thing that jumps the queue is an answer to a pending confirmation (see
 [Asking before acting](#asking-before-acting)) — a bare "yes" carries no linguistic
 signal at all, so the scorer would discard it as background chatter.
@@ -211,7 +233,8 @@ This reads the labelled dataset in `data/text/{train,val}/`, fine-tunes `distilb
 src/
   main.py            always-listening loop
   audio/             frames() source, Silero VAD, ring buffer, Whisper STT, TTS
-  ai_core/           llm (the one model client) · responder (JANET's voice) · tools (read-only lookups) · transcript
+  ai_core/           llm (the one model client) · responder (JANET's voice) · tools (read-only lookups)
+                     addressing (rescues follow-ups) · transcript
   intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
                      parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
   actions/           one handler per intent (time, date, timer, alarm, reminder, calc,
