@@ -65,7 +65,12 @@ PROMPT = (
     "Below is your recent conversation, including what your actions returned. "
     "Decide ONE thing about the new utterance: is the person speaking to YOU?\n"
     "\n"
-    "Say YES in either of these cases:\n"
+    "Say YES in any of these cases:\n"
+    "  * YOU ASKED A QUESTION and this could be the answer. If your last "
+    "message ended in a question mark, the next thing you hear is almost "
+    "certainly meant for you — however short, vague or grammatically unlike a "
+    "command it is (\"oh yeah\", \"8 am every weekday\", \"no it's okay\", "
+    "\"the second one\"). You asked; this is the reply;\n"
     "  * it follows on from what you just said — a short question or reply that "
     "only makes sense as a continuation (\"and tomorrow?\", \"why?\", \"do "
     "that\", \"what about Delhi\");\n"
@@ -74,9 +79,21 @@ PROMPT = (
     "subject completely. Changing topic does not mean they stopped talking to "
     "you.\n"
     "\n"
+    "People do not talk to an assistant in clean imperatives. A tag question "
+    "(\"so I won't need an umbrella then, right?\"), a correction (\"that's not "
+    "what I said\", \"it's not at 55%\"), a reaction (\"really?\") or a "
+    "half-sentence are all normal ways of continuing to talk to you. Do not "
+    "require a command or a direct question — judge who it was aimed at, not "
+    "what shape it has.\n"
+    "\n"
     "Say NO when it is people talking to each other, background media, or a "
     "statement nobody expects you to act on. When you genuinely can't tell, say "
     "no: staying quiet is the safe mistake.\n"
+    "\n"
+    "You have no body. You cannot pass, fetch, hold, open, carry or hand over "
+    "anything physical. \"Can you pass me the salt\" has the exact shape of a "
+    "request to an assistant, but it is being said to a person in the room — so "
+    "a request to do something physical is always NO.\n"
     "\n"
     "Note your speech-to-text is unreliable and often mangles your own name — "
     "\"Janet\" comes through as \"In January\", \"Jan at\", \"Janette\". "
@@ -107,6 +124,12 @@ def should_check(score, history, floor, query=""):
     # or a conversation. Checked before anything else because it is free.
     if len(query.split()) > MAX_WORDS:
         return False
+    # We asked a question, so we are OWED an answer: check regardless of score,
+    # and regardless of how long they took to think about it. Every one of these
+    # was missed in live testing because the answer to "what time should I set
+    # the alarm for?" scores 0 like any other ambient sentence.
+    if history is not None and history.last_reply_was_question():
+        return True
     since = history.seconds_since_last() if history is not None else None
     if since is not None and since <= WINDOW_SECONDS:
         return True
@@ -125,6 +148,14 @@ def is_addressed(query, history):
         block = history.context_block()
         if block:
             messages.append({"role": "system", "content": block})
+        # State it outright rather than relying on the model noticing the "?" at
+        # the end of its own last message. The same lesson as FACTS in the
+        # responder: an explicit sentence is obeyed, an absence is interpreted.
+        if history.last_reply_was_question():
+            messages.append({"role": "system", "content":
+                             "NOTE: your last message was a question, and it "
+                             "has not been answered yet. What you just heard is "
+                             "very likely that answer."})
     messages.append({"role": "user", "content":
                      f'The person just said: "{query}". Are they talking to you?'})
     try:

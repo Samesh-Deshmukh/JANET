@@ -13,17 +13,42 @@ Deliberately simple and predictable (the owner must be able to explain it):
   alarm" while a confirmation is pending doesn't get swallowed as "no",
 - it expires (TIMEOUT_SECONDS) so a stray "yes" minutes later can't fire it.
 """
+import re
 import time
 
 # Exact normalized phrases only — no fuzzy matching, no partial words.
 _YES = {
     "yes", "yeah", "yep", "yup", "sure", "ok", "okay", "confirm", "confirmed",
     "do it", "go ahead", "yes please", "please do", "correct", "thats right",
+    "yes do it", "sounds good", "that works", "perfect",
 }
 _NO = {
     "no", "nope", "cancel", "cancel that", "never mind", "nevermind",
     "forget it", "no thanks", "dont", "do not", "stop that",
+    # People decline by reassuring you, not by refusing. Live testing produced
+    # "Oh no, it's okay." to a confirmation, which matched nothing and was
+    # discarded as ambient speech — the question just went unanswered.
+    "no its okay", "no thats okay", "no im okay", "its okay", "thats okay",
+    "no its fine", "thats fine", "leave it",
 }
+
+# Speech doesn't start cleanly. "Oh yeah", "um, yes", "well, go ahead" all mean
+# yes, and an exact-match set sees none of them. Stripped repeatedly so "oh, um,
+# yeah" also lands on "yeah". Deliberately only fillers with no meaning of their
+# own — nothing here can flip an answer.
+_LEADING_FILLER = re.compile(r"^(?:oh|ah|um|uh|er|well|so|hmm|right|okay so|yeah so)\s+")
+_TRAILING_FILLER = re.compile(r"\s+(?:please|thanks|thank you|then|mate)$")
+
+
+def _tidy(text):
+    """Strip conversational padding so an exact match has a chance."""
+    text = (text or "").strip()
+    previous = None
+    while text != previous:
+        previous = text
+        text = _LEADING_FILLER.sub("", text)
+        text = _TRAILING_FILLER.sub("", text)
+    return text.strip()
 
 TIMEOUT_SECONDS = 60
 
@@ -69,8 +94,9 @@ def resolve(text):
         return None
     pending = _pending
     _pending = None                      # single-shot, whatever the answer was
-    if text in _YES:
+    answer = _tidy(text)                 # "oh yeah" -> "yeah"
+    if answer in _YES:
         return pending["run"]()
-    if text in _NO:
+    if answer in _NO:
         return "Okay, cancelled."
     return None                          # not an answer -> treat as a new command

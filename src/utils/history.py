@@ -71,6 +71,19 @@ class ConversationHistory:
             return ""
         return "Recently, for context:\n" + "\n".join(lines)
 
+    def last_reply_was_question(self):
+        """Did JANET's most recent reply ask the person something?
+
+        If it did, whatever it hears next is almost certainly the answer. The
+        two gates can't know that — they judge one sentence alone — so every
+        answer to JANET's own question was being discarded as ambient speech:
+        "8 am every weekday", "oh yeah", "oh no, it's okay" were all ignored in
+        live testing, immediately after JANET asked for exactly that.
+        """
+        if not self._turns:
+            return False
+        return self._turns[-1].assistant.strip().endswith("?")
+
     def seconds_since_last(self):
         """How long since JANET last replied, or None if it hasn't yet.
 
