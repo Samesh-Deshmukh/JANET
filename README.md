@@ -306,4 +306,4 @@ data/
 
 ## Target stack
 
-Whisper (STT) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
+Whisper (STT, `small`, English-forced and vocabulary-primed) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
