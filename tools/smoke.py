@@ -74,7 +74,11 @@ def main():
         ctx = Context(speak=lambda s: None, query=query, history=history)
         reply = respond(query, ctx)
         text = reply.text if reply else None
-        ok = text is not None and must_contain.lower() in text.lower()
+        # Compare with hyphens as spaces: the LLM phrases freely, so "a 5-minute
+        # timer" and "5 minutes" are both correct answers and neither should be
+        # a failure. We're testing that the right VALUE reached the sentence.
+        haystack = (text or "").lower().replace("-", " ")
+        ok = text is not None and must_contain.lower().replace("-", " ") in haystack
         check(f"{query[:44]!r} mentions {must_contain!r}", ok, f"got {text!r}")
         if reply:
             history.add(query, reply.text, facts=reply.facts,

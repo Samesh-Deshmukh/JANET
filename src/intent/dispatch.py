@@ -1,4 +1,6 @@
 # src/intent/dispatch.py
+import re
+
 from actions import (
     time_action, date_action, timer_action, calc_action, general_action,
     alarm_action, calendar_action, weather_action, smart_home_action,
@@ -16,6 +18,10 @@ from utils import confirm
 # a confident classification override the linguistic signal (which is what tells
 # a command TO JANET apart from a statement ABOUT the same topic).
 CONF_BONUS_SCALE = 10
+
+# "janet", "hey janet", "janet uh..." — the name and nothing else. Matched
+# against the NORMALIZED text, which has already lost its punctuation.
+_NAME_ONLY = re.compile(r"(?:hey\s+|hi\s+|ok\s+|okay\s+)?janet(?:\s+(?:uh|um|er|erm|hmm|so|well))*")
 
 REGISTRY = {
     "TIME": time_action.handle,
@@ -100,6 +106,17 @@ def respond(query, ctx):
             # the outcome of a confirmed action is spoken like everything else.
             return responder.compose(raw_query, "CONFIRM", answer, ctx.history,
                                      ctx.speak, score=None, confidence=None)
+
+    # Someone saying the name and then trailing off is addressing JANET — they
+    # just haven't got to the request yet. Classified, "janet uh" came back
+    # SYSTEM at 60% and JANET answered "I'm sorry, I can't do that yet", which
+    # is a refusal of a question nobody asked. A prompt is the useful reply.
+    if _NAME_ONLY.fullmatch(query):
+        print("🛡  Name only → acknowledging")
+        return responder.compose(
+            raw_query, "SYSTEM",
+            "They said your name but haven't asked for anything yet.",
+            ctx.history, ctx.speak)
 
     # Layer 1 (cheap) runs first. If the linguistic score is so low that even a
     # maxed-out confidence bonus couldn't reach the threshold, it can't be
