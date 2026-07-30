@@ -38,3 +38,6 @@ docs/janet_changes/
 
 # Captured utterances from JANET_DEBUG_AUDIO — your voice, never commit
 data/debug_audio/
+
+# Saved alarms, timers and reminders — your schedule, and machine-local state
+data/state/

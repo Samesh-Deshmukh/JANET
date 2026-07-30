@@ -35,6 +35,7 @@ from audio.vad import SpeechDetector
 from audio.ring_buffer import RingBuffer, PRE_ROLL_SAMPLES
 from audio.stt import transcribe
 from audio import speaker
+from actions import alarm_action, timer_action, reminder_action
 from intent.dispatch import respond
 from utils.context import Context
 from utils.history import ConversationHistory
@@ -188,6 +189,14 @@ def main():
     stop_event = threading.Event()
 
     speaker.start()
+
+    # Bring back anything JANET promised for a future time. Without this a
+    # restart silently threw away every alarm, timer and reminder — JANET said
+    # the alarm was set, and it was, right up until it wasn't.
+    restore_ctx = Context(speak=speaker.speak, query="", history=history)
+    alarm_action.restore(restore_ctx)
+    timer_action.restore(restore_ctx)
+    reminder_action.restore(restore_ctx)
     listener = threading.Thread(target=_capture, args=(utterances, stop_event),
                                 name="janet-capture", daemon=True)
     listener.start()

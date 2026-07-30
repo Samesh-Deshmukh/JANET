@@ -7,14 +7,16 @@ math for absolute times is NOT reimplemented here — `alarm_action.resolve`
 already encodes the resolution rule (soonest-future meridiem inference, the
 tomorrow floor, specific weekdays), so we import it.
 
-> Reminders live in memory only. They are lost when JANET restarts, and there is
-> no per-reminder cancel yet — "cancel my reminder" clears all of them.
+> Reminders are SAVED (utils/store) and re-armed at startup, so a restart no
+> longer loses them. There is still no per-reminder cancel — "cancel my
+> reminder" clears all of them.
 """
 from datetime import datetime, timedelta
 from threading import Timer
 
 from actions.alarm_action import resolve, speak_time
 from intent.remindparse import parse_reminder
+from utils import store
 
 _reminders = []          # active Reminder objects — the registry list + cancel need
 
@@ -70,6 +72,45 @@ class Reminder:
         ctx.speak(f"Reminder: {self.text}.")
         if self in _reminders:
             _reminders.remove(self)
+        _save()
+
+    def as_dict(self):
+        return {"text": self.text, "when": self.when.isoformat()}
+
+
+def _save():
+    store.save("reminders", [r.as_dict() for r in _reminders])
+
+
+def restore(ctx):
+    """Re-arm saved reminders at startup, and speak any that came due while off.
+
+    A missed reminder is different from a missed alarm. "Alarm! It\'s 7 AM" said
+    at half past nine is simply wrong, so alarms are dropped — but "you asked me
+    to remind you to call mom" is still the useful information it always was,
+    just late. So these are spoken once, framed as missed.
+    """
+    saved = store.load("reminders", []) or []
+    now = datetime.now()
+    missed = []
+    for item in saved:
+        try:
+            when = datetime.fromisoformat(item["when"])
+            reminder = Reminder(item["text"], when)
+            if when <= now:
+                missed.append(reminder)
+                continue
+            reminder.arm((when - now).total_seconds(), ctx)
+            _reminders.append(reminder)
+        except (KeyError, TypeError, ValueError) as exc:
+            print(f"\u26a0  skipping a saved reminder ({exc})")
+    for reminder in missed:
+        ctx.speak(f"While I was off, you wanted reminding {_remind_phrase(reminder.text)}.")
+    if _reminders or missed:
+        print(f"\U0001f514 Restored {len(_reminders)} reminder(s)" +
+              (f", {len(missed)} came due while JANET was off" if missed else ""))
+    _save()
+    return len(missed)
 
 
 def _cancel_all():
@@ -80,6 +121,7 @@ def _cancel_all():
         if reminder.timer:
             reminder.timer.cancel()
     _reminders.clear()
+    _save()
     return "Cancelled the reminder." if count == 1 else f"Cancelled {count} reminders."
 
 
@@ -130,4 +172,5 @@ def handle(slots, ctx):
     reminder = Reminder(text, when)
     reminder.arm((when - now).total_seconds(), ctx)
     _reminders.append(reminder)
+    _save()                     # so it survives a restart
     return confirmation

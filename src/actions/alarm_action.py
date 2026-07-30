@@ -4,6 +4,7 @@
 from datetime import datetime, timedelta, time as dtime
 
 from intent.timeparse import ALL_DAYS, WEEKDAY_SET, WEEKEND_SET
+from utils import store
 
 _NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -80,6 +81,7 @@ class Alarm:
         self.weekdays = weekdays
         self.recurring = recurring
         self.timer = None
+        self.at = None          # resolved datetime, kept so it can be saved
 
     def arm(self, delay, ctx):
         # daemon so a pending alarm never blocks Ctrl-C / shutdown.
@@ -92,9 +94,58 @@ class Alarm:
         if self.recurring:
             now = datetime.now()
             nxt = next_occurrence(now, self.hour24, self.minute, self.weekdays)
+            self.at = nxt
             self.arm((nxt - now).total_seconds(), ctx)   # re-arm on the pinned hour
         elif self in _alarms:
             _alarms.remove(self)
+        _save()
+
+    def as_dict(self):
+        return {
+            "hour24": self.hour24,
+            "minute": self.minute,
+            "weekdays": sorted(self.weekdays),
+            "recurring": self.recurring,
+            # The resolved date matters for a one-shot: "7 am tomorrow" and
+            # "7 am next Tuesday" are indistinguishable from hour+weekdays alone.
+            "at": self.at.isoformat() if self.at else None,
+        }
+
+
+def _save():
+    store.save("alarms", [a.as_dict() for a in _alarms])
+
+
+def restore(ctx):
+    """Re-arm saved alarms at startup. Returns a note for anything missed."""
+    saved = store.load("alarms", []) or []
+    now = datetime.now()
+    missed = 0
+    for item in saved:
+        try:
+            weekdays = set(item["weekdays"])
+            alarm = Alarm(item["hour24"], item["minute"], weekdays, item["recurring"])
+            if item["recurring"]:
+                # A recurring alarm has no single date — just find the next one.
+                target = next_occurrence(now, alarm.hour24, alarm.minute, weekdays)
+            else:
+                target = datetime.fromisoformat(item["at"]) if item.get("at") else None
+                if target is None or target <= now:
+                    # A one-shot whose moment passed while JANET was off. Saying
+                    # "Alarm! It's 7 AM" at half past nine would be a lie, so it
+                    # is dropped — but not silently.
+                    missed += 1
+                    continue
+            alarm.at = target
+            alarm.arm((target - now).total_seconds(), ctx)
+            _alarms.append(alarm)
+        except (KeyError, TypeError, ValueError) as exc:
+            print(f"⚠  skipping a saved alarm ({exc})")
+    if _alarms or missed:
+        print(f"⏰ Restored {len(_alarms)} alarm(s)" +
+              (f", {missed} missed while JANET was off" if missed else ""))
+    _save()
+    return missed
 
 
 def _describe(hour24, minute, spec, target):
@@ -118,6 +169,7 @@ def _cancel_all():
         if alarm.timer:
             alarm.timer.cancel()
     _alarms.clear()
+    _save()
     return "Cancelled the alarm." if n == 1 else f"Cancelled {n} alarms."
 
 
@@ -131,6 +183,8 @@ def handle(slots, ctx):
     now = datetime.now()
     target, hour24 = resolve(now, spec)
     alarm = Alarm(hour24, spec["minute"], spec["weekdays"], spec["recurring"])
+    alarm.at = target
     alarm.arm((target - now).total_seconds(), ctx)
     _alarms.append(alarm)
+    _save()                     # so it survives a restart
     return _describe(hour24, spec["minute"], spec, target)
