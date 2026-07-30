@@ -32,6 +32,19 @@ from ai_core import llm
 # to being ignored quickly.
 WINDOW_SECONDS = float(os.environ.get("JANET_FOLLOWUP_WINDOW", "30"))
 
+# Nobody speaks a 40-word command to an assistant. Continuous speech — a video, a
+# podcast, two people talking — never gives the VAD enough silence to end an
+# utterance, so it grows until main.py's 30-second cap cuts it. Measured live: a
+# Python tutorial produced repeated 30s chunks of ~80-100 words, and by sheer
+# length they accumulated enough incidental question words and keywords to clear
+# the score floor, reach the classifier, and buy an LLM addressing check.
+#
+# So the "background TV costs nothing" property held only for SHORT ambient
+# fragments, and was luck-of-the-draw for long ones. Length is the cheapest
+# possible signal that something wasn't addressed to JANET, and it needs no
+# plumbing — the transcript is already here.
+MAX_WORDS = int(os.environ.get("JANET_MAX_COMMAND_WORDS", "40"))
+
 _SCHEMA = {
     "type": "object",
     "properties": {
@@ -71,7 +84,7 @@ PROMPT = (
 )
 
 
-def should_check(score, history, floor):
+def should_check(score, history, floor, query=""):
     """Is it worth paying for the LLM on this one?
 
     Two triggers, either is enough:
@@ -90,6 +103,10 @@ def should_check(score, history, floor):
     design already says the utterance can't be rescued on linguistic grounds, so
     only a recent reply justifies asking.
     """
+    # Far too long to be something said TO an assistant — almost certainly media
+    # or a conversation. Checked before anything else because it is free.
+    if len(query.split()) > MAX_WORDS:
+        return False
     since = history.seconds_since_last() if history is not None else None
     if since is not None and since <= WINDOW_SECONDS:
         return True

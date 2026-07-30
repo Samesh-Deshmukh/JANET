@@ -50,7 +50,8 @@ def _rescue(raw_query, ling, ctx, why):
     conversation. A rescued utterance goes to GENERAL, which lets the responder
     answer it and call whatever tool it needs.
     """
-    if not addressing.should_check(ling, ctx.history, THRESHOLD - CONF_BONUS_SCALE):
+    if not addressing.should_check(ling, ctx.history, THRESHOLD - CONF_BONUS_SCALE,
+                                   raw_query):
         print(f"🛡  {why} → ignored")
         return None
     addressed, reason = addressing.is_addressed(raw_query, ctx.history)
