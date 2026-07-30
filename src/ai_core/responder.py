@@ -12,7 +12,7 @@ import os
 import time
 from dataclasses import dataclass
 
-from ai_core import llm, tools, transcript
+from ai_core import claims, llm, tools, transcript
 
 # The most important text in the file: these answers are READ ALOUD.
 #
@@ -29,6 +29,12 @@ SYSTEM_PROMPT = (
     "- FACTS, when present, are the result of an action you just ran. They are "
     "the truth. Never contradict them and never invent a value that isn't "
     "there. If FACTS are missing, answer from your own knowledge.\n"
+    "- FACTS are the ONLY evidence that you did something. With no FACTS you "
+    "have run nothing and changed nothing, so never say you have set, added, "
+    "sent, removed, scheduled or switched anything — you haven't, and they will "
+    "believe you. If they asked you to DO something and there are no FACTS, say "
+    "plainly that you couldn't do it. Answering a question needs no facts; "
+    "claiming an action always does.\n"
     "- Keep every value's meaning exactly, but SAY it the way a person would: "
     "a 24-hour time like 16:49 is \"4:49 PM\"; a bare number like 13 becomes a "
     "sentence such as \"That's 13.\" Never read a value out in a robotic form.\n"
@@ -128,6 +134,15 @@ def _build_messages(query, intent, facts, history):
     turn = f"INTENT: {intent}\n" if intent else ""
     if facts:
         turn += f"FACTS: {facts}\n"
+    else:
+        # Say the absence out loud rather than just omitting the line. Silence
+        # reads as "no information supplied"; this reads as "you did nothing",
+        # which is the fact that matters. With FACTS merely missing, a rescued
+        # "turn it down to 55" produced "Okay, the volume is now at 55%" — the
+        # model filled the gap with the outcome the user asked for.
+        turn += ("FACTS: none — no action ran and nothing was changed. You may "
+                 "answer from knowledge, but you must not state or imply that "
+                 "anything was done, set, or is now in a new state.\n")
     turn += f"USER: {query}"
     messages.append({"role": "user", "content": turn})
     return messages
@@ -226,6 +241,15 @@ def compose(query, intent=None, facts=None, history=None, speak=None,
     if not reply.text:
         # The server answered — it just said nothing. Not an outage.
         reply = _fallback(facts, "model returned an empty reply", offline=False)
+
+    # Nothing ran, so nothing can be claimed. The prompt asks for this too, but
+    # prompting is not a control — a live test had JANET say "Okay, I've set the
+    # volume to 55%" with FACTS of None while pactl still read 80%. See claims.py.
+    if not facts and claims.claims_action(reply.text):
+        print(f"🚫 Blocked an unbacked action claim: {reply.text!r}")
+        reply = Reply(text=claims.REFUSAL,
+                      reasoning="claimed an action with no facts behind it",
+                      facts="")
 
     _record(query, intent, facts, reply, started, score, confidence)
     return reply
