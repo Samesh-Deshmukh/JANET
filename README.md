@@ -15,7 +15,12 @@ Mic ─► VAD ─► Whisper ─► [pending yes/no?] ─► Scorer ─► Clas
                                                                       facts ──────┘ │
                                                                     read-only tools ┘
                                                               (when the facts fall short)
+
+ └── capture thread ──┘└──────────── main thread ────────────────────┘└ speech thread ┘
 ```
+
+Those are three real threads, so **the microphone never stops** while JANET
+thinks or talks — see [Staying responsive](#staying-responsive).
 
 Nothing is spoken unless **both** gates agree the utterance is a real request *to JANET*:
 
@@ -135,7 +140,8 @@ JANET: The first train has a 30-minute head start, covering 40 km. The second
 ```
 
 That deeper mode is off by default (`JANET_DEEP_THINKING=1`) because it takes
-~11–20s and JANET is single-threaded, so the mic is deaf while it thinks.
+~11–20s — and while JANET keeps listening throughout, it can't answer you until
+it finishes.
 
 Everything — query, facts, reasoning, thinking, reply — is written to a
 gitignored transcript in `data/transcripts/`.
@@ -156,6 +162,37 @@ JANET also keeps a **short-term conversation memory** (`utils/history.py`) — t
 That means JANET handles far more than sums: *"the derivative of x squared plus three x"* → `2x + 3`, *"solve x squared equals 4"* → `x = -2, 2`, *"the integral of 2x"*, *"5 choose 2"* → 10, limits, factoring and expanding. Ordinary arithmetic still takes a fast deterministic path with no model call at all — *"twenty times three"* → 60, *"two to the power of ten"* → 1024, *"25% of 52"* → 13.
 
 **And it declines rather than guessing.** That fast parser answers only when it can account for every number you said. Live testing caught Whisper turning *"25% **of** 52"* into *"25% **to** 52"*, which the old code parsed as just `25%` and answered **0.25** — for a question whose answer is 13. Dropping one of your numbers now hands the sentence to the solver instead of inventing an answer. Number-word parsing lives in `intent/numwords.py`; the solver in `ai_core/mathsolve.py`.
+
+## Staying responsive
+
+Every stage was timed before any of it was threaded, and the result was not what
+you'd guess:
+
+| Stage | Warm time |
+|---|---|
+| Whisper speech-to-text | **0.10s** |
+| Intent classifier | **0.00s** |
+| The language model | 1.4–2.3s |
+| **Speaking the answer** | **8.54s** |
+
+Speaking isn't a detail at the end of the pipeline — it's about 80% of it. And
+JANET used to sit inside it with the microphone stopped, so anything you said
+while it was talking was never even recorded.
+
+Capture, thinking and speaking now run on separate threads. The mic keeps
+running throughout, models load at startup instead of during your first sentence
+(3.6s that used to land exactly when JANET felt broken), and everything that
+talks shares one speech queue — so an alarm going off mid-answer waits its turn
+instead of playing over the top, which is what used to happen.
+
+**JANET still won't listen while it speaks**, on purpose: without echo
+cancellation it would transcribe its own voice, answer itself, and do it again.
+If you want barge-in, load the echo canceller and tell JANET the mic is safe:
+
+```bash
+pactl load-module module-echo-cancel   # not persistent across reboots
+JANET_BARGE_IN=1 python main.py
+```
 
 ## Integrations
 
@@ -195,6 +232,15 @@ JANET: Added Physio appointment to your calendar.
 
 Saying anything other than yes/no cancels it and is handled as a fresh command, and
 the request expires after a minute so a stray "yeah" later can't trigger it.
+
+**And what it promises, it keeps.** Alarms, timers and reminders are saved to
+disk and re-armed when JANET starts. They used to be in-memory timers, so a
+restart threw them away silently — JANET said the alarm was set, and it was,
+right up until it wasn't. Missed events aren't all treated alike: a recurring
+alarm re-arms, a one-shot alarm or timer whose moment passed is dropped (saying
+"it's 7 AM" at half past nine would be false), but a missed **reminder** is
+still spoken, because "you asked me to remind you to call mom" is just as useful
+late.
 
 **Yes doesn't have to be tidy.** People answer with "oh yeah", "um, sure", "well,
 go ahead" — and decline by reassuring you ("no it's okay", "that's fine") rather
