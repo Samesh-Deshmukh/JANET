@@ -35,3 +35,6 @@ data/transcripts/
 
 # Design docs JANET writes about its own changes — local proposals, not history
 docs/janet_changes/
+
+# Captured utterances from JANET_DEBUG_AUDIO — your voice, never commit
+data/debug_audio/
