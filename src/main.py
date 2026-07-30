@@ -3,12 +3,27 @@
 Every mic frame is (a) pushed into a pre-roll ring buffer and (b) fed to Silero
 VAD. When VAD reports speech start we begin an utterance, prepending the ring
 buffer so the first word isn't clipped; when it reports end (or we hit the length
-cap) we transcribe, dispatch, and speak, then reset and keep listening.
+cap) the utterance is handed off to be transcribed, dispatched and spoken.
 
-Single-threaded for Block 2: capture pauses during STT/TTS, so JANET doesn't hear
-itself. Concurrency comes in Block 5. Run from src/:  python main.py
+**Block 5: three threads.** Capture, thinking and speaking are separate, so the
+microphone keeps running while JANET works:
+
+    [capture thread]  frames -> ring + VAD -> utterance -> _utterances queue
+    [main thread]     utterance -> Whisper -> respond() -> speaker.speak()
+    [speech thread]   audio/speaker.py -> espeak -> paplay
+
+Why it mattered, measured on this machine: Whisper takes 0.10s and the language
+model ~2s, but **playing a typical answer takes 8.5 seconds** — and the old
+single-threaded loop was deaf for all of it. Anything said to JANET while it was
+talking, or in the second after, was simply never heard.
+
+JANET still doesn't listen to *itself*: there's no echo cancellation by default,
+so the capture thread discards frames while `speaker.is_speaking()`. See
+"Barge-in" in the README for turning that on. Run from src/:  python main.py
 """
 import os
+import queue
+import threading
 import wave
 from datetime import datetime
 from pathlib import Path
@@ -19,13 +34,25 @@ from audio.audio import frames, FRAME_SAMPLES, TARGET_RATE
 from audio.vad import SpeechDetector
 from audio.ring_buffer import RingBuffer, PRE_ROLL_SAMPLES
 from audio.stt import transcribe
-from audio.tts import say
+from audio import speaker
 from intent.dispatch import respond
 from utils.context import Context
 from utils.history import ConversationHistory
 
-MAX_UTTERANCE_S = 30
+# Lowered from 30s in Block 5. Continuous background speech — a video, a
+# podcast, two people talking — never gives the VAD the silence it needs to end
+# an utterance, so it runs to this cap. At 30s a real command spoken over a
+# playing video waited half a minute to be answered (observed live). Nobody
+# speaks a 15-second command, so cutting here costs nothing and halves the
+# worst case.
+MAX_UTTERANCE_S = 15
 MAX_UTTERANCE_FRAMES = MAX_UTTERANCE_S * TARGET_RATE // FRAME_SAMPLES
+
+# Utterances waiting to be transcribed. Small on purpose: if JANET is far enough
+# behind that four utterances are queued, the useful thing is to drop the oldest
+# and stay current, not to work through a backlog answering questions from a
+# minute ago.
+MAX_QUEUED_UTTERANCES = 4
 
 # JANET_DEBUG_AUDIO=1 saves every captured utterance as a WAV.
 #
@@ -36,6 +63,11 @@ MAX_UTTERANCE_FRAMES = MAX_UTTERANCE_S * TARGET_RATE // FRAME_SAMPLES
 # you know immediately.
 DEBUG_AUDIO = os.environ.get("JANET_DEBUG_AUDIO", "").lower() in ("1", "true", "yes")
 DEBUG_AUDIO_DIR = Path(__file__).resolve().parents[1] / "data" / "debug_audio"
+
+# JANET_BARGE_IN=1 keeps the microphone live while JANET is speaking. Only
+# useful with echo cancellation loaded, or JANET transcribes its own voice and
+# answers itself — see the README.
+BARGE_IN = os.environ.get("JANET_BARGE_IN", "").lower() in ("1", "true", "yes")
 
 
 def _save_debug_audio(audio, transcript):
@@ -55,36 +87,48 @@ def _save_debug_audio(audio, transcript):
         print(f"⚠  couldn't save debug audio: {exc}")
 
 
-def _handle(utterance, history):
-    """Transcribe one collected utterance and respond to it."""
-    audio = np.concatenate(utterance)
-    query = transcribe(audio)
-    print(f"🗣  You said: {query.strip()}")
-    if DEBUG_AUDIO:
-        _save_debug_audio(audio, query)
-    if not query.strip():
-        return                      # Whisper heard nothing intelligible; stay quiet
-    ctx = Context(speak=say, query=query, history=history)
-    reply = respond(query, ctx)
-    if reply is None:
-        return                          # not addressed / not for JANET — stay silent
-    print(f"⚙️  Reply: {reply.text}")
-    if reply.reasoning:
-        print(f"💭 Why: {reply.reasoning}")
-    say(reply.text)
-    # Remember this addressed exchange so later questions have context — including
-    # what the action returned and why JANET answered that way.
-    history.add(query, reply.text, facts=reply.facts, reasoning=reply.reasoning)
+def _preload():
+    """Load every model before the first utterance instead of during it.
+
+    Measured: Whisper 2.0s + DistilBERT 1.6s + Silero 0.05s. Loaded lazily, that
+    whole 3.6s landed on the first thing you said after starting JANET, which is
+    exactly when it feels broken. Paid at startup it costs nothing — you aren't
+    talking yet.
+    """
+    print("⏳ Warming up models...")
+    SpeechDetector()                        # Silero, cached in a module singleton
+    from audio.stt import _get_model
+    _get_model()                            # Whisper
+    from intent.classifier import predict
+    predict("what time is it")              # DistilBERT
+    print("✅ Ready.")
 
 
-def main():
-    print("JANET is running (always-listening). Press Ctrl-C to quit.")
+def _capture(utterances, stop_event):
+    """Read the mic forever, emitting complete utterances onto `utterances`.
+
+    Runs on its own thread and never does slow work, so the microphone is not
+    at the mercy of how long Whisper, the language model or playback take.
+    """
     detector = SpeechDetector()
     ring = RingBuffer(capacity=PRE_ROLL_SAMPLES)
-    history = ConversationHistory()     # short-term memory, shared across turns
     utterance = None                # None = idle; a list = actively collecting
 
     for frame in frames():
+        if stop_event.is_set():
+            return
+
+        # JANET's own voice reaches the microphone, and without echo
+        # cancellation it would be transcribed like anything else — JANET would
+        # hear itself, answer itself, and do it again. So while it is speaking
+        # (plus a short settle) we throw frames away and keep the VAD reset.
+        if not BARGE_IN and speaker.is_speaking():
+            if utterance is not None:
+                utterance = None
+                detector.reset()
+            ring.clear()
+            continue
+
         ring.push(frame)
         event = detector.process(frame)
 
@@ -92,13 +136,75 @@ def main():
             if event == "start":
                 # seed with the pre-roll so the opening word survives
                 utterance = [ring.snapshot()]
-        else:
-            utterance.append(frame)
-            if event == "end" or len(utterance) >= MAX_UTTERANCE_FRAMES:
-                _handle(utterance, history)
-                detector.reset()
-                ring.clear()
-                utterance = None
+            continue
+
+        utterance.append(frame)
+        if event == "end" or len(utterance) >= MAX_UTTERANCE_FRAMES:
+            try:
+                utterances.put_nowait(np.concatenate(utterance))
+            except queue.Full:
+                # Drop the OLDEST, keep the newest: the thing just said matters
+                # more than something from a minute ago.
+                try:
+                    utterances.get_nowait()
+                    utterances.put_nowait(np.concatenate(utterance))
+                    print("⚠  running behind — dropped an older utterance")
+                except (queue.Empty, queue.Full):
+                    pass
+            detector.reset()
+            ring.clear()
+            utterance = None
+
+
+def _handle(audio, history):
+    """Transcribe one collected utterance and respond to it."""
+    query = transcribe(audio)
+    print(f"🗣  You said: {query.strip()}")
+    if DEBUG_AUDIO:
+        _save_debug_audio(audio, query)
+    if not query.strip():
+        return                      # Whisper heard nothing intelligible; stay quiet
+    ctx = Context(speak=speaker.speak, query=query, history=history)
+    reply = respond(query, ctx)
+    if reply is None:
+        return                          # not addressed / not for JANET — stay silent
+    print(f"⚙️  Reply: {reply.text}")
+    if reply.reasoning:
+        print(f"💭 Why: {reply.reasoning}")
+    speaker.speak(reply.text)
+    # Remember this addressed exchange so later questions have context — including
+    # what the action returned and why JANET answered that way.
+    history.add(query, reply.text, facts=reply.facts, reasoning=reply.reasoning)
+
+
+def main():
+    _preload()
+    print("JANET is running (always-listening). Press Ctrl-C to quit.")
+    if BARGE_IN:
+        print("🎙  Barge-in ON — the mic stays live while JANET speaks.")
+
+    history = ConversationHistory()     # short-term memory, shared across turns
+    utterances = queue.Queue(maxsize=MAX_QUEUED_UTTERANCES)
+    stop_event = threading.Event()
+
+    speaker.start()
+    listener = threading.Thread(target=_capture, args=(utterances, stop_event),
+                                name="janet-capture", daemon=True)
+    listener.start()
+
+    # The main thread does the thinking. Keeping it here (rather than on a third
+    # worker) means Ctrl-C lands where it's easy to handle, and there is exactly
+    # one thread touching the history and the confirmation gate — so neither
+    # needs a lock.
+    try:
+        while True:
+            try:
+                audio = utterances.get(timeout=0.5)
+            except queue.Empty:
+                continue
+            _handle(audio, history)
+    finally:
+        stop_event.set()
 
 
 if __name__ == "__main__":
@@ -106,3 +212,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\n👋 JANET stopped.")
+        speaker.stop(timeout=2.0)
