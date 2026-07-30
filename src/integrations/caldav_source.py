@@ -35,6 +35,7 @@ def ics_to_events(ics_text):
             summary=str(comp.get("summary") or "(no title)"),
             all_day=all_day,
             location=str(comp.get("location") or ""),
+            uid=str(comp.get("uid") or ""),
         ))
     return events
 
@@ -67,3 +68,21 @@ class CalDAVSource:
             dtend=event.end,
             summary=event.summary,
         )
+
+    def delete_event(self, event):
+        """Delete by uid — the only identifier the server agrees with us on.
+
+        Deliberately refuses when there is no uid rather than falling back to
+        "delete whatever is at that time", because the caller reached here from
+        a misheard sentence and the operation cannot be undone.
+        """
+        if not event.uid:
+            raise LookupError("no uid for that event")
+        for calendar in self._calendars():
+            try:
+                obj = calendar.event_by_uid(event.uid)
+            except caldav.lib.error.NotFoundError:
+                continue
+            obj.delete()
+            return
+        raise LookupError(f"event {event.uid!r} not found on the server")

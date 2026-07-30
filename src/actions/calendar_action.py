@@ -8,7 +8,7 @@ import caldav.lib.error
 
 from actions.alarm_action import resolve
 from intent.dateparse import parse_query
-from intent.eventparse import parse_event, is_create
+from intent.eventparse import parse_event, parse_delete, is_create, is_delete
 from integrations.calendar_factory import get_calendar_source
 from integrations.calendar_source import Event
 from utils import confirm
@@ -104,11 +104,72 @@ def _handle_create(source, ctx, now):
     return f"Shall I add {event.summary} {_speak_when(event, now)}?"
 
 
+# How far ahead a "remove X" request looks. Long enough to find next week's
+# dentist appointment; the confirmation says the date back, so a wrong week is
+# caught by ear before anything is deleted.
+_DELETE_HORIZON_DAYS = 14
+
+
+def _best_match(events, wanted):
+    """The event whose summary best matches the words the person said.
+
+    Word overlap, not fuzzy matching — same reasoning as smart_home's device
+    matching. Returns None when nothing shares a word, because deleting the
+    "closest" thing to a sentence we didn't understand is exactly the failure
+    the confirmation gate exists to prevent.
+    """
+    words = set(wanted.lower().split())
+    if not words:
+        return None
+    best, best_score = None, 0
+    for event in events:
+        score = len(words & set(event.summary.lower().split()))
+        if score > best_score:
+            best, best_score = event, score
+    return best
+
+
+def _handle_delete(source, ctx, now):
+    """Find the event they named, then ASK before removing it."""
+    title = parse_delete(ctx.query)["title"]
+    if not title:
+        return "Which event should I remove?"
+
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    try:
+        events = source.events_between(start, start + timedelta(days=_DELETE_HORIZON_DAYS))
+    except _CONN_ERRORS:
+        return "I couldn't reach your calendar."
+
+    event = _best_match(events, title)
+    if event is None:
+        return f"I couldn't find {title} on your calendar."
+
+    def remove():
+        try:
+            source.delete_event(event)
+        except _CONN_ERRORS:
+            return "I couldn't reach your calendar."
+        except LookupError:
+            return f"{event.summary} wasn't there any more."
+        return f"Removed {event.summary} from your calendar."
+
+    confirm.request(remove)
+    # Say it back in full — the title, the day AND the time — so a mishearing is
+    # obvious while it can still be stopped.
+    return f"Shall I remove {event.summary}, {_speak_when(event, now)}?"
+
+
 def handle(slots, ctx):
     source = get_calendar_source()
     if source is None:
         return "Your calendar isn't set up yet."
     now = datetime.now()
+    # Delete is checked BEFORE create: "cancel my 3pm" contains no create verb,
+    # but "take the dentist off my calendar" would trip "put"/"make" in a
+    # longer sentence, and removing something is the less recoverable of the two.
+    if is_delete(ctx.query):
+        return _handle_delete(source, ctx, now)
     if is_create(ctx.query):
         return _handle_create(source, ctx, now)
     req = parse_query(ctx.query.lower(), now)

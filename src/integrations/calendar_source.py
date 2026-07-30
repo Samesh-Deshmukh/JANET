@@ -12,6 +12,11 @@ class Event:
     summary: str
     all_day: bool = False
     location: str = ""
+    # The backend's own identifier, when it has one. Needed to DELETE an event:
+    # a summary and a start time identify an event to a person, but only the uid
+    # identifies it to the server. Empty for the in-memory sources, which can
+    # match on the fields themselves.
+    uid: str = ""
 
 
 class CalendarSource(Protocol):
@@ -21,6 +26,10 @@ class CalendarSource(Protocol):
 
     def create_event(self, event: "Event") -> None:
         """Add an event to the calendar."""
+        ...
+
+    def delete_event(self, event: "Event") -> None:
+        """Remove an event. Raise LookupError if it is no longer there."""
         ...
 
 
@@ -36,3 +45,11 @@ class FakeCalendarSource:
 
     def create_event(self, event):
         self._events.append(event)
+
+    def delete_event(self, event):
+        """Match on start + summary — there is no server to give us a uid."""
+        for i, existing in enumerate(self._events):
+            if existing.start == event.start and existing.summary == event.summary:
+                del self._events[i]
+                return
+        raise LookupError(f"no event {event.summary!r} to delete")

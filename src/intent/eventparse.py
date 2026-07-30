@@ -14,6 +14,11 @@ from intent import timeparse
 # to create something ("what's on my calendar" vs "add lunch to my calendar").
 _CREATE_VERBS = ("schedule", "add", "create", "book", "set up", "put", "make")
 
+# ...and these turn it into a request to take something OFF it. "cancel" is
+# shared with alarms, but by the time this runs the classifier has already said
+# CALENDAR, so there is nothing to disambiguate against.
+_DELETE_VERBS = ("remove", "delete", "cancel", "clear", "get rid of", "take off")
+
 # "for 30 minutes" / "for 2 hours"
 _DURATION = re.compile(r"\bfor\s+(\d+)\s*(minutes?|mins?|hours?)\b")
 
@@ -40,6 +45,18 @@ def is_create(text):
     return any(verb in text.lower() for verb in _CREATE_VERBS)
 
 
+# "take the dentist OFF MY CALENDAR" — the verb and its particle are split by
+# the title, so the plain word list can't see it.
+_OFF_CALENDAR = re.compile(r"\boff\s+(my|the)\s+calendar\b")
+
+
+def is_delete(text):
+    """True when the utterance asks to take something OFF the calendar."""
+    text = text.lower()
+    return (any(verb in text for verb in _DELETE_VERBS)
+            or bool(_OFF_CALENDAR.search(text)))
+
+
 def _duration_minutes(text):
     match = _DURATION.search(text)
     if match:
@@ -52,9 +69,9 @@ def _duration_minutes(text):
     return DEFAULT_DURATION_MINUTES
 
 
-def _title(text):
+def _title(text, verbs=_CREATE_VERBS):
     """Whatever is left once the command, the time, and filler are removed."""
-    for verb in _CREATE_VERBS:
+    for verb in verbs:
         text = re.sub(rf"\b{verb}\b", " ", text)
     text = _CALENDAR_FILLER.sub(" ", text)
     for pattern in _TIME_PHRASES:
@@ -62,6 +79,21 @@ def _title(text):
     text = _FILLER_WORDS.sub(" ", text)
     text = re.sub(r"[^\w\s]", " ", text)          # drop stray punctuation
     return " ".join(text.split())
+
+
+# Words a delete request wraps around the actual title ("could you remove my
+# lunch with Alex" -> "lunch with alex"). Subtracted the same way as everything
+# else, so the leftover is what the person actually named.
+_DELETE_FILLER = re.compile(
+    r"\b(could|can|would|will|you|please|for|me|off|from|of|get|rid|that|it|take)\b")
+
+
+def parse_delete(text):
+    """-> {"title": str}. "" when they didn't say WHICH event."""
+    text = text.lower()
+    title = _title(text, verbs=_DELETE_VERBS)
+    title = _DELETE_FILLER.sub(" ", title)
+    return {"title": " ".join(title.split())}
 
 
 def parse_event(text):

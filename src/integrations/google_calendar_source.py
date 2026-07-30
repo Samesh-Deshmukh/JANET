@@ -140,6 +140,8 @@ def to_event(item):
         summary=item.get("summary") or "(no title)",
         all_day=all_day,
         location=item.get("location") or "",
+        # Google's own id, needed to delete this occurrence later.
+        uid=item.get("id") or "",
     )
 
 
@@ -315,6 +317,20 @@ class GoogleCalendarSource:
         self._execute(lambda api: api.insert(
             calendarId=self._calendar_id,
             body=to_insert_body(event),
+        ))
+
+    def delete_event(self, event):
+        """Delete by Google's own event id.
+
+        Refuses without an id rather than searching for something that looks
+        similar: this is reached from a spoken sentence that may have been
+        misheard, and a deletion cannot be undone by saying "no" afterwards.
+        """
+        if not event.uid:
+            raise LookupError("no id for that event")
+        self._execute(lambda api: api.delete(
+            calendarId=self._calendar_id,
+            eventId=event.uid,
         ))
 
     # --- plumbing ------------------------------------------------------------
