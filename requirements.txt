@@ -68,3 +68,8 @@ screeninfo==0.8.1
 #   PyGetWindow  - Windows/macOS window management; raises NotImplementedError on Linux.
 #   PyRect       - only a dependency of PyGetWindow.
 evdev==1.9.3
+
+# Exact maths for the CALC intent (ai_core/mathsolve.py). Already present as a
+# torch dependency, but listed explicitly because JANET imports it directly —
+# relying on another package to keep pulling it in is how installs break later.
+sympy==1.14.0

@@ -1,8 +1,28 @@
 # src/actions/calc_action.py
+"""CALC intent — two paths, and it never guesses.
+
+1. **The fast path** (this file): a small deterministic parser for ordinary
+   spoken arithmetic. No model call, so "what's twenty times three" answers
+   instantly. It only answers when it can account for EVERY number you said —
+   see `_accounted_for`, which is what stops it inventing an answer out of a
+   sentence it half-understood.
+2. **The solver** (`ai_core.mathsolve`): the LLM translates the sentence into an
+   expression and SymPy evaluates it. Slower, but it handles percentages the
+   fast path misreads, and algebra, calculus and combinatorics it can't touch
+   at all.
+
+The fast path declining is therefore not a failure — it is the trigger for the
+better path. That ordering was chosen after a live test where "what's 25% to 52"
+(Whisper heard "to", not "of") made the old parser silently drop the 52 and
+answer 0.25 for a question whose answer is 13.
+"""
 import ast
 import operator
 import re
 
+from ai_core import llm
+from ai_core.mathsolve import MathError
+from ai_core import mathsolve
 from intent import numwords
 
 # Allowed AST operators — anything else is rejected (untrusted-input safe).
@@ -32,6 +52,10 @@ _WORDS = {
 }
 
 _MAX_EXPONENT = 100     # reject huge exponents so "2 to the power of 99999999" can't hang us
+
+_NUMBER = re.compile(r"\d+(?:\.\d+)?")
+
+CANT_WORK_IT_OUT = "I couldn't work that out."
 
 
 def _eval(node):
@@ -68,21 +92,59 @@ def _to_expression(text):
     return max(candidates, key=len).strip() if candidates else ""
 
 
+def _accounted_for(spoken, expression):
+    """Did the expression use every number the person actually said?
+
+    The parser builds its expression by grabbing the longest run of maths
+    characters, so a word it doesn't understand doesn't produce an error — it
+    quietly truncates the sum. "25% to 52" becomes "(25/100)", which is a
+    perfectly valid expression, evaluates to 0.25, and is not remotely the
+    answer to the question asked.
+
+    Numbers are the one thing we can check cheaply: if you said 52 and it isn't
+    in the expression, the sentence was not understood, whatever the parser
+    thinks. (Extra numbers are fine — the percent rule introduces its own 100.)
+    """
+    said = set(_NUMBER.findall(numwords.words_to_numbers(spoken)))
+    used = set(_NUMBER.findall(expression))
+    return said and said <= used
+
+
+def _fast_path(text):
+    """Deterministic arithmetic, or None when this parser shouldn't be trusted."""
+    math = _to_expression(text)
+    if not re.search(r"[-+*/%]", math):
+        return None            # no operator -> not arithmetic (also stops "510")
+    if not _accounted_for(text, math):
+        return None            # we dropped one of their numbers -> don't guess
+    try:
+        result = _eval(ast.parse(math, mode="eval").body)
+    except ZeroDivisionError:
+        return "I can't divide by zero."
+    except (ValueError, SyntaxError, TypeError, OverflowError, RecursionError):
+        return None            # let the solver try instead
+    if isinstance(result, float):
+        result = int(result) if result.is_integer() else round(result, 2)
+    return f"That's {result}."
+
+
 def handle(slots, ctx):
     # Read the RAW transcript (ctx.query), NOT a normalized slot: normalize strips
     # math symbols and decimals ("25% of 52" -> "25 of 52", "3.5" -> "3 5"), which
     # destroys the expression. Same reason general_action reads ctx.query.
-    math = _to_expression((ctx.query or "").lower())
-    if not re.search(r"[-+*/%]", math):
-        # No operator -> not a calculation (also stops misheard input like "510").
-        return "I couldn't work that out."
+    question = (ctx.query or "").strip()
+    quick = _fast_path(question.lower())
+    if quick is not None:
+        return quick
+
+    # The fast path wasn't sure. Hand the sentence to the LLM to translate, and
+    # let SymPy do the actual maths.
     try:
-        tree = ast.parse(math, mode="eval")
-        result = _eval(tree.body)
-    except ZeroDivisionError:
-        return "I can't divide by zero."
-    except (ValueError, SyntaxError, TypeError, OverflowError, RecursionError):
-        return "I couldn't work that out."
-    if isinstance(result, float):
-        result = int(result) if result.is_integer() else round(result, 2)
-    return f"That's {result}."
+        facts = mathsolve.solve(question)
+    except MathError as exc:
+        return f"I couldn't work that out — {exc}."
+    except llm.LLMUnavailable:
+        # No model, and the deterministic parser already declined. Saying so is
+        # the honest answer; guessing is what got us here.
+        return CANT_WORK_IT_OUT
+    return facts if facts else CANT_WORK_IT_OUT
