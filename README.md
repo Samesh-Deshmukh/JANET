@@ -60,8 +60,8 @@ Every intent the classifier recognises now has a handler:
 | **TIMER** | "set a timer for 5 minutes", "set a pasta timer for 12 minutes", "how much time is left", "cancel the timer" |
 | **ALARM** | "set an alarm for 7 AM", "every weekday at 8", "set an alarm for 8 on Wednesday", "cancel the alarm" |
 | **REMINDER** | "remind me to call mom in ten minutes", "remind me to take the pills at 5", "what are my reminders" |
-| **CALC** | "what's 25% of 52", "twenty times three", "two to the power of ten", "square root of 144" |
-| **CALENDAR** | "what's on my calendar today", "what's my next meeting", "am I free tomorrow", "schedule a dentist appointment tomorrow at 3" |
+| **CALC** | "what's 25% of 52", "twenty times three", "the derivative of x squared plus three x", "solve x squared equals 4", "what's 5 choose 2" |
+| **CALENDAR** | "what's on my calendar today", "what's my next meeting", "am I free tomorrow", "schedule a dentist appointment tomorrow at 3", "remove lunch with Alex" |
 | **WEATHER** | "what's the weather", "will it rain tomorrow", "what's the weather in London" |
 | **SMART_HOME** | "turn on the living room lights", "switch off the fan", "are the kitchen lights on" |
 | **EMAIL** | "do I have any new email", "who emailed me", "read my last email", "reply saying I'll be there" |
@@ -100,6 +100,29 @@ switch on a light without going through the confirmation below. There's no wake
 word and Whisper mishears, so looking something up and *changing* something are
 deliberately different risk classes. Lookups are capped at two per utterance.
 
+### It can't tell you it did something it didn't
+
+The rule is simple and mechanical: **the facts a handler returns are the only
+evidence an action ran.** If a reply claims something was set, added, sent or
+switched and no facts back it up, the claim is false by construction — so JANET
+says it couldn't do it instead.
+
+This exists because of a real failure, caught by checking JANET's word against
+the system it claimed to have changed:
+
+```
+you:   Can you turn it down to 55 again?
+JANET: Okay, I've set the volume to 55%.
+pactl: 80%                                   ← nothing had run
+```
+
+For an assistant with no screen, *silently didn't do it but said it did* is
+worse than any error message — you walk away believing the light is off. There
+are three layers against it now (the turn states outright that nothing ran, a
+prompt rule, and a check on the finished sentence), because the first fix wasn't
+enough: told not to claim the *action*, the model asserted the *result state*
+instead. See `ai_core/claims.py`.
+
 It also records *why* it said something (a one-line reasoning), and can decide a
 question needs real thought — saying something casual first so the pause isn't
 dead air:
@@ -128,7 +151,11 @@ JANET also keeps a **short-term conversation memory** (`utils/history.py`) — t
 
 **ALARM** sets one-shot, specific-day, and recurring alarms by voice and can cancel them — *"set an alarm for 7 AM"*, *"set an alarm for 8 on Wednesday"*, *"every weekday at 8"*, *"cancel the alarm"*. A bare time resolves to the soonest future occurrence (parsing in `intent/timeparse.py`, scheduling in `actions/alarm_action.py`). Alarms are in-memory and reset on restart.
 
-**CALC** does arithmetic plus exponents, modulo, square root, percentages, and **spoken number words** — *"twenty times three"* → 60, *"two to the power of ten"* → 1024, *"square root of 144"* → 12, *"twenty percent of fifty"* → 10. It requires a real operator (so a misheard number isn't answered as a "calculation"), rounds non-integer results, and refuses divide-by-zero. Number-word parsing lives in `intent/numwords.py`.
+**CALC** works on a principle worth stating plainly: **the language model translates, and a real maths library computes.** Models are fluent and unreliable at arithmetic; SymPy is the reverse. So the model only turns your sentence into an expression — it never calculates, and it never writes executable code (the operation is picked from a fixed list, and expressions are vetted as syntax before anything can run them).
+
+That means JANET handles far more than sums: *"the derivative of x squared plus three x"* → `2x + 3`, *"solve x squared equals 4"* → `x = -2, 2`, *"the integral of 2x"*, *"5 choose 2"* → 10, limits, factoring and expanding. Ordinary arithmetic still takes a fast deterministic path with no model call at all — *"twenty times three"* → 60, *"two to the power of ten"* → 1024, *"25% of 52"* → 13.
+
+**And it declines rather than guessing.** That fast parser answers only when it can account for every number you said. Live testing caught Whisper turning *"25% **of** 52"* into *"25% **to** 52"*, which the old code parsed as just `25%` and answered **0.25** — for a question whose answer is 13. Dropping one of your numbers now hands the sentence to the solver instead of inventing an answer. Number-word parsing lives in `intent/numwords.py`; the solver in `ai_core/mathsolve.py`.
 
 ## Integrations
 
@@ -168,6 +195,15 @@ JANET: Added Physio appointment to your calendar.
 
 Saying anything other than yes/no cancels it and is handled as a fresh command, and
 the request expires after a minute so a stray "yeah" later can't trigger it.
+
+**Yes doesn't have to be tidy.** People answer with "oh yeah", "um, sure", "well,
+go ahead" — and decline by reassuring you ("no it's okay", "that's fine") rather
+than refusing. Conversational padding is stripped before matching, so those all
+land. Only meaningless fillers are removed, so nothing can flip an answer.
+
+And because JANET now knows when it has asked you something, **an answer to its
+own question is never mistaken for background chatter** — which it used to be,
+every single time.
 
 Some things are refused outright rather than confirmed, because no wake word means
 one misheard sentence shouldn't be able to cause real damage:
