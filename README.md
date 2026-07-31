@@ -120,11 +120,21 @@ JANET: Let me check.                        (calls get_weather(city="Delhi"))
 JANET: It's 22.4 degrees and partly cloudy in Delhi.
 ```
 
-Those tools are **read-only** on purpose — weather, calendar, time, email, device
-state. JANET can look anything up, but it can't create an event, send mail or
-switch on a light without going through the confirmation below. There's no wake
-word and Whisper mishears, so looking something up and *changing* something are
-deliberately different risk classes. Lookups are capped at two per utterance.
+Those lookups are **read-only** — weather, calendar, time, email, device state.
+
+**And it can act, too.** If you ask for something to be done, the model runs the
+action itself rather than depending on the intent classifier to have understood
+you. That matters more than it sounds: polite phrasings score badly on the
+classifier ("can you delete lunch with Alex?" came out at 48% confidence), and
+JANET used to answer *"I can't delete events for you"* about things it does
+perfectly well.
+
+**Acting never skips a confirmation.** The gate lives inside the handler, not in
+how the handler was reached — so creating an event or sending a reply still
+states itself back and waits for a yes, whichever route got there. Read-only
+lookups and world-changing actions are kept in separate files so the code that
+can *change* anything is one short list you can read in a minute. An action can
+run at most once per request, and lookups are capped at two.
 
 ### It can't tell you it did something it didn't
 

@@ -29,6 +29,11 @@ def _slots_for(label, query):
     return {}
 
 
+# Public name for the same thing. `ai_core.acting` needs to fill slots for an
+# action the LLM chose directly, without going through the classifier at all.
+slots_for = _slots_for
+
+
 def classify(query):
     """Classify one (normalized) utterance.
 

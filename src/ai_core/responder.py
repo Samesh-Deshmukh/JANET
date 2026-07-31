@@ -12,7 +12,7 @@ import os
 import time
 from dataclasses import dataclass
 
-from ai_core import claims, llm, tools, transcript
+from ai_core import acting, claims, llm, tools, transcript
 
 # The most important text in the file: these answers are READ ALOUD.
 #
@@ -32,9 +32,9 @@ SYSTEM_PROMPT = (
     "- FACTS are the ONLY evidence that you did something. With no FACTS you "
     "have run nothing and changed nothing, so never say you have set, added, "
     "sent, removed, scheduled or switched anything — you haven't, and they will "
-    "believe you. If they asked you to DO something and there are no FACTS, say "
-    "plainly that you couldn't do it. Answering a question needs no facts; "
-    "claiming an action always does.\n"
+    "believe you. If they asked you to DO something and there are no FACTS yet, "
+    "run the matching act_ tool; only if that fails do you say you couldn't. "
+    "Answering a question needs no facts; claiming an action always does.\n"
     "- FACTS that say a calculation FAILED are not an invitation to do the "
     "maths yourself. You may still answer a question about a rule, an identity "
     "or a definition from your own knowledge (sine over cosine is tangent), but "
@@ -60,10 +60,21 @@ SYSTEM_PROMPT = (
     "when you genuinely lack the information — if the FACTS already answer it, "
     "set tool to 'none' and just reply. When you do look something up, put a "
     "short casual line in interim to say while you fetch it.\n"
+    "- If they asked you to DO something and no FACTS show it was done, use the "
+    "matching act_ tool instead of apologising. You reach the same machinery the "
+    "normal path does, so anything that needs confirming will still ask. Only "
+    "act when they actually asked for it — never on an overheard remark, and "
+    "never twice for one request.\n"
     "\n"
-    "Tools you can use:\n" + tools.catalogue() + "\n"
+    "Lookups (these change nothing):\n" + tools.catalogue() + "\n"
+    "\n"
+    "Actions (these DO something):\n" + acting.catalogue() + "\n"
     "\n"
     "Also return:\n"
+    "- reply: the COMPLETE spoken answer. It is the only thing the person "
+    "hears, so it must contain the answer itself — if the FACTS name four "
+    "events, your reply names them. A reply that promises an answer instead of "
+    "giving one is silence, because there is no second turn.\n"
     "- reasoning: one short line on why you replied that way.\n"
     "- need_deeper_thinking: true ONLY when the question genuinely needs "
     "careful multi-step reasoning. Answering from FACTS never does.\n"
@@ -85,21 +96,40 @@ DEEP_SYSTEM_PROMPT = (
     "thinking is read aloud verbatim."
 )
 
-RESPONSE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "reply": {"type": "string"},
-        "reasoning": {"type": "string"},
-        "need_deeper_thinking": {"type": "boolean"},
-        # An enum, so constrained decoding makes it IMPOSSIBLE for the model to
-        # name a tool that doesn't exist.
-        "tool": {"type": "string", "enum": tools.names()},
-        "tool_args": {"type": "object"},
-        "interim": {"type": "string"},
-    },
-    "required": ["reply", "reasoning", "need_deeper_thinking", "tool",
-                 "tool_args", "interim"],
-}
+def schema_for(facts=None):
+    """The response schema, offering only the choices this turn can use.
+
+    Actions are offered ONLY when no facts exist yet. If a handler has already
+    run and produced facts, the action for this utterance has happened; another
+    would be a second action for one request, which is separately refused.
+
+    It also keeps the enum small, which measurably matters. Widening it from 8
+    to 15 hurt selection: in 1 run out of 5, "what is 25 percent of 52?" — with
+    FACTS of "That's 13." — came back answered with a weather lookup. Every
+    extra choice is a chance to pick the wrong one, so nothing is offered that
+    this turn has no use for.
+    """
+    choices = tools.names() + (acting.names() if not facts else [])
+    return {
+        "type": "object",
+        "properties": {
+            "reply": {"type": "string"},
+            "reasoning": {"type": "string"},
+            "need_deeper_thinking": {"type": "boolean"},
+            # Lookups and actions share one enum, so constrained decoding makes
+            # it IMPOSSIBLE for the model to name either one that doesn't exist
+            # — a guarantee native tool-calling APIs don't give you.
+            "tool": {"type": "string", "enum": choices},
+            "tool_args": {"type": "object"},
+            "interim": {"type": "string"},
+        },
+        "required": ["reply", "reasoning", "need_deeper_thinking", "tool",
+                     "tool_args", "interim"],
+    }
+
+
+# The full shape, for callers and tests that just want to inspect it.
+RESPONSE_SCHEMA = schema_for()
 
 # How many extra lookups one utterance may trigger. Each costs ~2s, and a model
 # that keeps asking for one more would leave the user in silence forever.
@@ -149,9 +179,12 @@ def _build_messages(query, intent, facts, history):
         # which is the fact that matters. With FACTS merely missing, a rescued
         # "turn it down to 55" produced "Okay, the volume is now at 55%" — the
         # model filled the gap with the outcome the user asked for.
-        turn += ("FACTS: none — no action ran and nothing was changed. You may "
-                 "answer from knowledge, but you must not state or imply that "
-                 "anything was done, set, or is now in a new state.\n")
+        turn += ("FACTS: none — nothing has run YET, so nothing has changed "
+                 "yet. If they asked you to DO something, call the matching "
+                 "act_ tool now instead of refusing. You may answer a question "
+                 "from your own knowledge. Until an action hands back facts, "
+                 "never say or imply that anything was done, set, or is now in "
+                 "a new state.\n")
     turn += f"USER: {query}"
     messages.append({"role": "user", "content": turn})
     return messages
@@ -189,8 +222,16 @@ def compose(query, intent=None, facts=None, history=None, speak=None,
     messages = _build_messages(query, intent, facts, history)
 
     collected = [facts] if facts else []
+    # An action may run at most ONCE per utterance. Measured: asked to add a
+    # calendar event, the model called act_calendar on both tool rounds, which
+    # queued two confirmations for one request. Harmless there; for act_email
+    # that is sending twice. Prompting said "never twice" and did not hold, so
+    # this is the part that does not depend on the model complying.
+    acted = False
+    # Actions are offered only while nothing has run yet — see schema_for().
+    turn_schema = schema_for(facts)
     try:
-        data = llm.chat(messages, schema=RESPONSE_SCHEMA)
+        data = llm.chat(messages, schema=turn_schema)
 
         # The model may ask to look something up. Run it, hand back the result,
         # and let it answer again — capped so it can't keep stalling.
@@ -201,13 +242,30 @@ def compose(query, intent=None, facts=None, history=None, speak=None,
             interim = (data.get("interim") or "").strip()
             if interim and speak:
                 speak(interim)       # so the lookup isn't silent
-            result = tools.run(wanted, data.get("tool_args"))
+            if wanted in acting.ACTIONS and acted:
+                print(f"🚫 Refused a second action ({wanted}) for one request")
+                messages.append({"role": "system", "content":
+                                 "You have already performed an action for this "
+                                 "request. Do not act again — answer now using "
+                                 "the FACTS above."})
+                data = llm.chat(messages, schema=turn_schema)
+                break
+            if wanted in acting.ACTIONS:
+                acted = True
+                # An ACTION, not a lookup. Build the same Context the normal
+                # pipeline hands a handler, so confirmation gates and history
+                # behave identically whichever way the handler was reached.
+                from utils.context import Context
+                result = acting.run(wanted, Context(speak=speak or (lambda s: None),
+                                                    query=query, history=history))
+            else:
+                result = tools.run(wanted, data.get("tool_args"))
             if result is None:       # unknown tool: answer with what we have
                 break
             print(f"🔧 Tool: {wanted}({data.get('tool_args')}) -> {result}")
             collected.append(result)
             messages.append({"role": "user", "content": f"FACTS: {result}"})
-            data = llm.chat(messages, schema=RESPONSE_SCHEMA)
+            data = llm.chat(messages, schema=turn_schema)
         else:
             # Ran out of lookups while it still wanted more — make it answer
             # with what it has, or the user just hears another stall line.
@@ -215,7 +273,7 @@ def compose(query, intent=None, facts=None, history=None, speak=None,
                 messages.append({"role": "system", "content":
                                  "No more lookups are available. Answer now "
                                  "using only the FACTS above."})
-                data = llm.chat(messages, schema=RESPONSE_SCHEMA)
+                data = llm.chat(messages, schema=turn_schema)
     except llm.LLMUnavailable as exc:
         reply = _fallback(facts, exc)
         _record(query, intent, facts, reply, started, score, confidence)

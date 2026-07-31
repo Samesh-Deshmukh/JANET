@@ -82,6 +82,10 @@ def _title(text, verbs=_CREATE_VERBS):
         text = pattern.sub(" ", text)
     text = _FILLER_WORDS.sub(" ", text)
     text = re.sub(r"[^\w\s]", " ", text)          # drop stray punctuation
+    # Removing a time phrase leaves its preposition behind: "on tomorrow at
+    # 3pm" loses "tomorrow" and strands "on", which then became part of a real
+    # event titled "Dentist appointment on".
+    text = re.sub(r"^\s*(?:on|at|in|for)\b|\b(?:on|at|in|for)\s*$", " ", text)
     return " ".join(text.split())
 
 
