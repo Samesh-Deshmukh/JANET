@@ -45,6 +45,10 @@ WINDOW_SECONDS = float(os.environ.get("JANET_FOLLOWUP_WINDOW", "30"))
 # plumbing — the transcript is already here.
 MAX_WORDS = int(os.environ.get("JANET_MAX_COMMAND_WORDS", "40"))
 
+# Inside the follow-up window, only SHORT utterances are worth a model call.
+# See should_check for the measurement behind it.
+WINDOW_MAX_WORDS = int(os.environ.get("JANET_FOLLOWUP_MAX_WORDS", "12"))
+
 # The two things a rescued utterance can be. Named so `dispatch` and this module
 # can't drift apart on a string literal.
 NEW_REQUEST = "new_request"
@@ -74,62 +78,45 @@ _SCHEMA = {
 # only whether the words were aimed at it. Saying that plainly keeps it from
 # drifting into being helpful about the content.
 PROMPT = (
-    "You are JANET, a local voice assistant in someone's home. Your microphone "
-    "is always on, so you constantly hear speech that is NOT for you: other "
-    "people talking to each other, a TV, a video playing.\n"
+    "You are JANET, a voice assistant in someone's home. Your microphone is "
+    "always on, so most of what you hear is NOT for you: people talking to each "
+    "other, a television, a video, a podcast.\n"
     "\n"
-    "Below is your recent conversation, including what your actions returned. "
-    "Decide ONE thing about the new utterance: is the person speaking to YOU?\n"
+    "Decide ONE thing about the new utterance: was it aimed at YOU?\n"
     "\n"
-    "Say YES in any of these cases:\n"
-    "  * YOU ASKED A QUESTION and this could be the answer. If your last "
-    "message ended in a question mark, the next thing you hear is almost "
-    "certainly meant for you — however short, vague or grammatically unlike a "
-    "command it is (\"oh yeah\", \"8 am every weekday\", \"no it's okay\", "
-    "\"the second one\"). You asked; this is the reply;\n"
-    "  * it follows on from what you just said — a short question or reply that "
-    "only makes sense as a continuation (\"and tomorrow?\", \"why?\", \"do "
-    "that\", \"what about Delhi\");\n"
-    "  * it is a request of the kind people make OF AN ASSISTANT — a "
-    "calculation, a fact, the time, a timer, a command — even if it changes the "
-    "subject completely. Changing topic does not mean they stopped talking to "
-    "you.\n"
+    "YES if any of these is true:\n"
+    "  1. you asked a question and this could be the answer — however short or "
+    "vague (\"oh yeah\", \"8 am every weekday\", \"no it's okay\");\n"
+    "  2. it only makes sense as a continuation of what you just said "
+    "(\"and tomorrow?\", \"why?\", \"what about Delhi\");\n"
+    "  3. it asks you to do or tell them something you could actually do — a "
+    "calculation, the time, a timer, a light. A change of subject is fine.\n"
     "\n"
-    "People do not talk to an assistant in clean imperatives. A tag question "
-    "(\"so I won't need an umbrella then, right?\"), a correction (\"that's not "
-    "what I said\", \"it's not at 55%\"), a reaction (\"really?\") or a "
-    "half-sentence are all normal ways of continuing to talk to you. Do not "
-    "require a command or a direct question — judge who it was aimed at, not "
-    "what shape it has.\n"
+    "NO if any of these is true:\n"
+    "  4. it is part of a longer explanation, story or argument — narration, "
+    "not a request. Media sounds like this;\n"
+    "  5. it names or addresses someone else, or is two people talking;\n"
+    "  6. it only closes the exchange — \"okay\", \"thanks\", \"got it\";\n"
+    "  7. it asks for something physical. You have no body: you cannot pass, "
+    "fetch, carry or open anything.\n"
     "\n"
-    "Say NO when it is people talking to each other, background media, or a "
-    "statement nobody expects you to act on. When you genuinely can't tell, say "
-    "no: staying quiet is the safe mistake.\n"
+    "A question is not enough on its own. Media asks questions constantly — of "
+    "the viewer, of another character, rhetorically. Ask who would answer it.\n"
     "\n"
-    "Also say NO to an acknowledgement that CLOSES the exchange — \"okay\", "
-    "\"thanks\", \"got it\", \"cool\", \"nice one\", \"fair enough\". They are "
-    "aimed at you, but they are not asking for anything, and answering them "
-    "makes you sound needy. Only the last word matters here: \"okay, what about "
-    "Friday?\" is a real question.\n"
+    "When you cannot tell, answer NO. Staying quiet is the safe mistake.\n"
     "\n"
-    "Then set `kind`:\n"
-    "  * \"new_request\" — they are asking you to DO or look up something, even "
-    "if it refers back (\"can you turn it up to 60\", \"delete that alarm\", "
-    "\"set one for 8am instead\"). Anything you would act on.\n"
-    "  * \"follow_up\" — it only makes sense as a continuation of what you just "
-    "said, and answering it means using that context (\"and tomorrow?\", "
-    "\"why?\", \"what about Delhi\", \"you can't do what?\").\n"
-    "When it is both, prefer \"new_request\": acting on the wrong thing is "
-    "recoverable, refusing something you can do is just wrong.\n"
+    "Your speech-to-text is unreliable and mangles your own name (\"Janet\" "
+    "becomes \"In January\", \"Jan at\", \"Janette\"), so never require the "
+    "name to be present or spelled correctly.\n"
     "\n"
-    "You have no body. You cannot pass, fetch, hold, open, carry or hand over "
-    "anything physical. \"Can you pass me the salt\" has the exact shape of a "
-    "request to an assistant, but it is being said to a person in the room — so "
-    "a request to do something physical is always NO.\n"
+    "`reason`: quote the words that decided it and say what they show. Never "
+    "restate a rule from this list — \"it follows on from what you just said\" "
+    "explains nothing.\n"
     "\n"
-    "Note your speech-to-text is unreliable and often mangles your own name — "
-    "\"Janet\" comes through as \"In January\", \"Jan at\", \"Janette\". "
-    "Do not require your name to be spelled correctly, or present at all."
+    "`kind`: \"new_request\" if you would DO something about it; \"follow_up\" "
+    "if answering means using what was just said. When both fit, choose "
+    "\"new_request\" — refusing something you can do is worse than acting on "
+    "the wrong thing."
 )
 
 
@@ -160,6 +147,14 @@ def should_check(score, history, floor, query=""):
     # and regardless of how long they took to think about it. Every one of these
     # was missed in live testing because the answer to "what time should I set
     # the alarm for?" scores 0 like any other ambient sentence.
+    # A reply to JANET, or an answer to its question, is SHORT. The longest
+    # genuine follow-up measured across a real session was 8 words; the media
+    # chunk that leaked ("...can you think of the smallest butt head double? I'll
+    # give you a hint...") was 31. Length is free to check and separates them
+    # cleanly: at this limit 100% of real follow-ups survive and 46% of ambient
+    # stops costing a model call at all.
+    if len(query.split()) > WINDOW_MAX_WORDS:
+        return score >= floor
     if history is not None and history.last_reply_was_question():
         return True
     since = history.seconds_since_last() if history is not None else None

@@ -48,6 +48,17 @@ def dispatch(intent, slots, ctx):
     return handler(slots, ctx)
 
 
+# Signals that are real evidence the utterance was aimed at JANET. "question"
+# and "2nd-person" are NOT here: media is full of both.
+_STRONG_SIGNALS = {"janet", "keyword", "command"}
+
+
+def _weakly_addressed(label, breakdown):
+    """Passed the gates, but with no evidence beyond being question-shaped."""
+    return (label == "GENERAL"
+            and not ({name for name, _ in breakdown} & _STRONG_SIGNALS))
+
+
 def _rescue(raw_query, ling, ctx, why, label=None, slots=None):
     """Before going silent, ask the LLM whether it was being talked to.
 
@@ -178,6 +189,22 @@ def respond(query, ctx):
     if not addressed:
         return _rescue(raw_query, ling, ctx, f"Score: {shown} borderline",
                        label=label, slots=slots)
+
+    # Both gates passed — but on what evidence? A bare question scores exactly
+    # THRESHOLD on question-shape alone, so ANY question in the room clears
+    # Layer 1, and GENERAL is the classifier's catch-all for "no idea". The
+    # conjunction of those two is the exact profile of overheard media: live,
+    # "Why are we going this way?" (score 40, GENERAL 66%) was answered.
+    #
+    # The LLM check exists for precisely this judgement but only ever ran on the
+    # SILENT path, so nothing ever second-guessed a wrongly-confident yes.
+    # Measured against a real session: this verifies 1 command in 73 (~1s), and
+    # catches the one ambient utterance that reached a reply.
+    if _weakly_addressed(label, breakdown):
+        ok, _kind, reason = addressing.is_addressed(raw_query, ctx.history)
+        if not ok:
+            print(f"🤔 Verified → not for me ({reason})")
+            return None
 
     # The handler no longer speaks: whatever it returns is the FACTS, and the
     # responder turns those facts + the conversation into what JANET says.

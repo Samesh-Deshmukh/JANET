@@ -47,9 +47,19 @@ you:   and tomorrow?
 JANET: It's going to be rainy in Pune tomorrow, with a high of 27.6C.
 ```
 
-That check only runs when JANET spoke in the last 30 seconds, or the score was
-near the line — so a quiet room, or a background video with no conversation in
-progress, still costs nothing at all.
+That check only runs when JANET spoke in the last 30 seconds *and the utterance
+is short*, or the score was near the line — so a quiet room, or a background
+video with no conversation in progress, still costs nothing at all. The length
+rule matters more than it sounds: a reply to JANET is short (the longest real
+one measured was 8 words), while media arrives in 30-word paragraphs, and one of
+those was getting through.
+
+It also verifies itself in the other direction. A bare question scores exactly
+the threshold on question-shape alone, so *any* question in the room used to
+clear the first gate — and a line of film dialogue ("Why are we going this
+way?") got answered. When an utterance passes on question-shape alone and the
+classifier can only call it "general", JANET now checks before replying rather
+than after.
 
 **It also decides where the utterance goes**, which turned out to matter more
 than the rescue itself. Polite phrasings score badly on the classifier — "can
@@ -163,6 +173,14 @@ are three layers against it now (the turn states outright that nothing ran, a
 prompt rule, and a check on the finished sentence), because the first fix wasn't
 enough: told not to claim the *action*, the model asserted the *result state*
 instead. See `ai_core/claims.py`.
+
+One lesson from building that prompt, since it cost three separate bugs: **a
+negative rule aimed at an edge case gets applied to the main case.** Telling the
+model "never announce what you're about to say" — and quoting the bad phrasing —
+made it do that *more*. Telling it "never produce a number the calculator
+declined" made it refuse to read out numbers the calculator had happily
+produced. Both were fixed by saying what to do first and putting the exception
+second.
 
 It also records *why* it said something (a one-line reasoning), and can decide a
 question needs real thought — saying something casual first so the pause isn't
