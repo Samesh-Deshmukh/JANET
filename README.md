@@ -51,6 +51,27 @@ That check only runs when JANET spoke in the last 30 seconds, or the score was
 near the line — so a quiet room, or a background video with no conversation in
 progress, still costs nothing at all.
 
+**It also decides where the utterance goes**, which turned out to matter more
+than the rescue itself. Polite phrasings score badly on the classifier — "can
+you delete lunch with Alex?" came out at 48% confidence, under the floor — and
+sending those to the general-knowledge path meant JANET answered *"I can't
+delete events for you"* about something it does perfectly well. Three different
+capabilities got falsely refused that way in one sitting.
+
+So the check reports which of two things it heard:
+
+| | Goes to | Because |
+|---|---|---|
+| **a new request** — "can you turn it up to 60" | the real handler | it's something to *do*, whatever the classifier's confidence said |
+| **a follow-up** — "and tomorrow?" | the LLM + its tools | it only makes sense in context; the calendar handler would read out events instead of the weather |
+
+Ties go to *new request*: refusing something you can do is worse than acting on
+the wrong thing.
+
+One more thing it filters — **acknowledgements get no reply.** "Okay", "thanks",
+"got it" are aimed at JANET but aren't asking for anything, and answering them
+makes it sound needy.
+
 The one thing that jumps the queue is an answer to a pending confirmation (see
 [Asking before acting](#asking-before-acting)) — a bare "yes" carries no linguistic
 signal at all, so the scorer would discard it as background chatter.
