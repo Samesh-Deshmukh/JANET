@@ -35,7 +35,11 @@ _TIME_PHRASES = [
 _CALENDAR_FILLER = re.compile(r"\b(to|on|in|into)?\s*(my|the)?\s*calendar\b")
 # Words that carry no meaning in a title. "meeting"/"lunch"/"event" are KEPT —
 # they make perfectly good titles ("schedule a meeting" -> "Meeting").
-_FILLER_WORDS = re.compile(r"\b(a|an|the|my|please|new|janet)\b")
+# "can you" survived into a real event titled "Can you another event" in live
+# testing: the create verb was stripped but the polite wrapper around it was
+# not. parse_delete already handled this; create didn't.
+_FILLER_WORDS = re.compile(
+    r"\b(a|an|the|my|please|new|janet|can|could|would|will|you|another|for|me)\b")
 
 DEFAULT_DURATION_MINUTES = 60
 

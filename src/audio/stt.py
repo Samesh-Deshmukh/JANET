@@ -40,7 +40,14 @@ LANGUAGE = "en"
 INITIAL_PROMPT = (
     "Janet. Hey Janet, what time is it? Janet, set a timer for five minutes. "
     "Janet, set an alarm for 7 AM. Janet, what's the weather? Janet, what's on "
-    "my calendar? Janet, remind me to call mom. Janet, turn on the lights."
+    "my calendar? Janet, remind me to call mom. Janet, turn on the lights. "
+    # JANET does calculus now, and the decoder was still primed only for timers
+    # and weather. "What is sine 34" came back as "What is SIGN 34", which the
+    # addressing check then reasonably read as a question about signage and
+    # ignored -- the same failure as "Janet" -> "In January", same cheap fix.
+    "Janet, what is sine x over cosine x? What is the derivative of x squared "
+    "plus four x? What is the integral of 2x? Solve x squared equals four. "
+    "What is the square root of 144? What is 25 percent of 52?"
 )
 
 _model = None

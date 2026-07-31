@@ -45,13 +45,29 @@ WINDOW_SECONDS = float(os.environ.get("JANET_FOLLOWUP_WINDOW", "30"))
 # plumbing — the transcript is already here.
 MAX_WORDS = int(os.environ.get("JANET_MAX_COMMAND_WORDS", "40"))
 
+# The two things a rescued utterance can be. Named so `dispatch` and this module
+# can't drift apart on a string literal.
+NEW_REQUEST = "new_request"
+FOLLOW_UP = "follow_up"
+
 _SCHEMA = {
     "type": "object",
     "properties": {
         "addressed": {"type": "boolean"},
+        # Which KIND of thing it is decides where a rescued utterance goes, and
+        # getting this wrong breaks one case or the other:
+        #   "new_request" -> route to the real handler. "Can you turn it up to
+        #     60" classified SYSTEM at 36%, under the confidence floor, and was
+        #     sent to GENERAL — which has no hands — so JANET said "I can't do
+        #     that yet" about something it does perfectly well.
+        #   "follow_up"   -> GENERAL, so the responder's tools resolve it from
+        #     context. "and tomorrow?" classifies CALENDAR at 38%; routing it to
+        #     the calendar handler would read out events instead of tomorrow's
+        #     weather. This is the case the rescue was BUILT for.
+        "kind": {"type": "string", "enum": ["new_request", "follow_up"]},
         "reason": {"type": "string"},
     },
-    "required": ["addressed", "reason"],
+    "required": ["addressed", "kind", "reason"],
 }
 
 # Deliberately narrow. This model is NOT deciding what to do or how to answer —
@@ -89,6 +105,22 @@ PROMPT = (
     "Say NO when it is people talking to each other, background media, or a "
     "statement nobody expects you to act on. When you genuinely can't tell, say "
     "no: staying quiet is the safe mistake.\n"
+    "\n"
+    "Also say NO to an acknowledgement that CLOSES the exchange — \"okay\", "
+    "\"thanks\", \"got it\", \"cool\", \"nice one\", \"fair enough\". They are "
+    "aimed at you, but they are not asking for anything, and answering them "
+    "makes you sound needy. Only the last word matters here: \"okay, what about "
+    "Friday?\" is a real question.\n"
+    "\n"
+    "Then set `kind`:\n"
+    "  * \"new_request\" — they are asking you to DO or look up something, even "
+    "if it refers back (\"can you turn it up to 60\", \"delete that alarm\", "
+    "\"set one for 8am instead\"). Anything you would act on.\n"
+    "  * \"follow_up\" — it only makes sense as a continuation of what you just "
+    "said, and answering it means using that context (\"and tomorrow?\", "
+    "\"why?\", \"what about Delhi\", \"you can't do what?\").\n"
+    "When it is both, prefer \"new_request\": acting on the wrong thing is "
+    "recoverable, refusing something you can do is just wrong.\n"
     "\n"
     "You have no body. You cannot pass, fetch, hold, open, carry or hand over "
     "anything physical. \"Can you pass me the salt\" has the exact shape of a "
@@ -137,10 +169,11 @@ def should_check(score, history, floor, query=""):
 
 
 def is_addressed(query, history):
-    """(addressed, reason). Never raises — on any LLM problem, returns False.
+    """(addressed, kind, reason). Never raises — on any LLM problem, returns False.
 
-    False is the safe default: it just means JANET stays quiet, which is what
-    would have happened anyway without this module.
+    `kind` is "new_request" or "follow_up" and decides where a rescued utterance
+    is routed — see `_SCHEMA`. False is the safe default: it just means JANET
+    stays quiet, which is what would have happened anyway without this module.
     """
     messages = [{"role": "system", "content": PROMPT}]
     if history is not None:
@@ -159,8 +192,11 @@ def is_addressed(query, history):
     messages.append({"role": "user", "content":
                      f'The person just said: "{query}". Are they talking to you?'})
     try:
-        data = llm.chat(messages, schema=_SCHEMA, max_tokens=120)
+        data = llm.chat(messages, schema=_SCHEMA, max_tokens=160)
     except llm.LLMUnavailable as exc:
         print(f"⚠  addressing check unavailable ({exc}) — staying silent")
-        return False, "llm unavailable"
-    return bool(data.get("addressed")), (data.get("reason") or "").strip()
+        return False, FOLLOW_UP, "llm unavailable"
+    kind = (data.get("kind") or FOLLOW_UP).strip()
+    if kind not in (NEW_REQUEST, FOLLOW_UP):
+        kind = FOLLOW_UP                 # unknown value: the safer of the two
+    return bool(data.get("addressed")), kind, (data.get("reason") or "").strip()

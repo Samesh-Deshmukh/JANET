@@ -48,23 +48,54 @@ def dispatch(intent, slots, ctx):
     return handler(slots, ctx)
 
 
-def _rescue(raw_query, ling, ctx, why):
+def _rescue(raw_query, ling, ctx, why, label=None, slots=None):
     """Before going silent, ask the LLM whether it was being talked to.
 
     Both gates judge one sentence alone, so a follow-up like "and tomorrow?" is
     invisible to them — the LLM is the only part of JANET holding the
-    conversation. A rescued utterance goes to GENERAL, which lets the responder
-    answer it and call whatever tool it needs.
+    conversation.
+
+    Where a rescued utterance GOES depends on what kind of thing it is, and
+    getting that wrong breaks one case or the other. Live testing found both:
+
+    * "Can you turn it up to 60?" classified SYSTEM at **36%**, under the
+      confidence floor, and went to GENERAL — which runs no action — so JANET
+      answered "I can't do that yet" about something it does perfectly well.
+      Three different capabilities were falsely refused this way in one session.
+    * "and tomorrow?" classifies CALENDAR at **38%**. Routing *that* to the
+      calendar handler would read out events instead of tomorrow's weather.
+
+    So the addressing check now also reports `kind`, and a **new_request** is
+    sent to the classifier's handler while a **follow_up** goes to GENERAL,
+    where the responder's tools can resolve it from context.
+
+    The confidence floor is deliberately not consulted here. It was already
+    applied — and overruled — by the addressing check, which had the whole
+    conversation to look at and said this really was a request. Re-applying it
+    would just reproduce the bug.
     """
     if not addressing.should_check(ling, ctx.history, THRESHOLD - CONF_BONUS_SCALE,
                                    raw_query):
         print(f"🛡  {why} → ignored")
         return None
-    addressed, reason = addressing.is_addressed(raw_query, ctx.history)
+    addressed, kind, reason = addressing.is_addressed(raw_query, ctx.history)
     if not addressed:
         print(f"🤔 {why} → not for me ({reason})")
         return None
-    print(f"🤔 {why} → rescued: {reason}")
+    print(f"🤔 {why} → rescued ({kind}): {reason}")
+
+    # The scorer can veto before the classifier ever runs, so a rescued
+    # utterance may not have a label yet. Classify it now rather than earlier:
+    # ambient speech never reaches this line, so the common case still pays
+    # nothing (and warm, the classifier costs ~0ms anyway).
+    if kind == addressing.NEW_REQUEST and label is None:
+        label, _confidence, slots = classify(normalize(raw_query))
+
+    if kind == addressing.NEW_REQUEST and label and label in REGISTRY:
+        print(f"↪  routing to {label}")
+        facts = dispatch(label, slots, ctx)
+        return responder.compose(raw_query, label, facts, ctx.history, ctx.speak,
+                                 score=ling)
     return responder.compose(raw_query, "GENERAL", None, ctx.history, ctx.speak,
                              score=ling)
 
@@ -133,7 +164,8 @@ def respond(query, ctx):
     if label == "NONE" or confidence < CONF_THRESHOLD:
         # Half of all missed follow-ups die here, not at the scorer: "how about
         # friday" passes the scorer at 40 then gets only 38% on CALENDAR.
-        return _rescue(raw_query, ling, ctx, f"Intent: {label} ({confidence:.0%})")
+        return _rescue(raw_query, ling, ctx, f"Intent: {label} ({confidence:.0%})",
+                       label=label, slots=slots)
     print(f"🧠 Intent: {label} ({confidence:.0%})")
 
     # The confidence bonus is only needed when the linguistic score fell short --
@@ -144,7 +176,8 @@ def respond(query, ctx):
     addressed = combined >= THRESHOLD
     print(f"🛡  Score: {shown} ({detail}) → {'addressed' if addressed else 'ignored'}")
     if not addressed:
-        return _rescue(raw_query, ling, ctx, f"Score: {shown} borderline")
+        return _rescue(raw_query, ling, ctx, f"Score: {shown} borderline",
+                       label=label, slots=slots)
 
     # The handler no longer speaks: whatever it returns is the FACTS, and the
     # responder turns those facts + the conversation into what JANET says.
