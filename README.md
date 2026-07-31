@@ -129,6 +129,11 @@ classifier ("can you delete lunch with Alex?" came out at 48% confidence), and
 JANET used to answer *"I can't delete events for you"* about things it does
 perfectly well.
 
+JANET only offers itself actions when nothing has run yet — once a handler has
+answered, the action for that sentence has already happened. That also keeps the
+list of choices short, which turns out to matter: a longer list made it
+occasionally reach for the wrong one.
+
 **Acting never skips a confirmation.** The gate lives inside the handler, not in
 how the handler was reached — so creating an event or sending a reply still
 states itself back and waits for a yes, whichever route got there. Read-only
