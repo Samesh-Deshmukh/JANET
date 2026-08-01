@@ -6,6 +6,8 @@ Used by the calculator so "twenty times three" becomes "20 times 3". Bounded to
 number. Hand-rolled (not a dependency) so every line is explainable. Non-number
 words pass through.
 """
+import re
+
 _UNITS = {
     "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
     "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12,
@@ -46,13 +48,48 @@ def _flush(run, out):
         out.append(str(_run_value(run)))
 
 
+def _split_hyphenated(text):
+    """"eighty-five" -> "eighty five", but only between two number words.
+
+    Whisper writes compound numbers with a hyphen as a matter of course, and the
+    tokenizer below splits on whitespace only — so "eighty-five" was one unknown
+    token and stayed as English. That was worse than it sounds: "take forty
+    percent off eighty-five" left 85 invisible, so the calculator saw only "40
+    percent", believed it had understood the whole sentence, and answered 0.4.
+
+    The both-sides test is what keeps "well-known" and "up-to-date" intact.
+    """
+    def join(match):
+        left, right = match.group(1), match.group(2)
+        return f"{left} {right}" if {left, right} <= _NUMBER_WORDS else match.group(0)
+
+    return re.sub(r"\b([a-z]+)-([a-z]+)\b", join, text)
+
+
+# Punctuation that can ride along on the last word of a spoken number.
+_TRAILING_PUNCT = ".,!?;:"
+
+
 def words_to_numbers(text):
-    """Replace each run of number words with its digit string; keep other words."""
+    """Replace each run of number words with its digit string; keep other words.
+
+    Tokens are split on whitespace, so trailing punctuation used to hide a
+    number word: in "seventeen times twenty-three?", the token was "three?",
+    which is not a number word, so the run flushed early as 20 and the three was
+    silently lost — giving 17 x 20. The punctuation is set aside for the
+    membership test and put back afterwards.
+    """
     out = []
     run = []
-    for tok in text.split():
-        if tok in _NUMBER_WORDS:
-            run.append(tok)
+    for tok in _split_hyphenated(text).split():
+        core = tok.rstrip(_TRAILING_PUNCT)
+        tail = tok[len(core):]
+        if core in _NUMBER_WORDS:
+            run.append(core)
+            if tail:                     # punctuation ends the number
+                _flush(run, out)
+                run = []
+                out[-1] += tail
         else:
             _flush(run, out)
             run = []

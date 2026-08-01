@@ -105,7 +105,14 @@ def _accounted_for(spoken, expression):
     in the expression, the sentence was not understood, whatever the parser
     thinks. (Extra numbers are fine — the percent rule introduces its own 100.)
     """
-    said = set(_NUMBER.findall(numwords.words_to_numbers(spoken)))
+    converted = numwords.words_to_numbers(spoken)
+    # A number word that survived conversion is a number we failed to read, and
+    # comparing digits alone cannot see it: "seventeen times twenty-three?"
+    # became "17 times 20 three?", whose digits {17, 20} all appear in the
+    # expression "17 * 20" — so the check passed while the answer was wrong.
+    if set(converted.split()) & numwords._NUMBER_WORDS - {"and"}:
+        return False
+    said = set(_NUMBER.findall(converted))
     used = set(_NUMBER.findall(expression))
     return said and said <= used
 
