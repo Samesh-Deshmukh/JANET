@@ -248,6 +248,20 @@ pactl load-module module-echo-cancel   # not persistent across reboots
 JANET_BARGE_IN=1 python main.py
 ```
 
+## Checking it still works
+
+```bash
+export JANET_CALENDAR=demo JANET_WEATHER=demo JANET_SMART_HOME=demo JANET_EMAIL=demo
+./venv/bin/python tools/smoke.py        # 30 checks, ~1 min — the fast gate
+./venv/bin/python tools/full_check.py   # 69 checks — every intent, gate and guard
+```
+
+`full_check.py` covers all twelve intents, the maths solver and its blocked
+attack surface, the acting path, the honesty guard, ambient rejection, the
+confirmation vocabulary, calendar writes end to end, persistence across a
+restart, the speech thread, agent containment, and what happens when the model
+is unreachable.
+
 ## Integrations
 
 Each integration hides behind a small protocol (`integrations/*_source.py`), so the
