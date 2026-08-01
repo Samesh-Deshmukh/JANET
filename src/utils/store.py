@@ -39,8 +39,18 @@ def load(name, default=None):
     """Read `name`.json, or return `default` if it's missing or unreadable."""
     try:
         with open(path_for(name), encoding="utf-8") as handle:
-            return json.load(handle)
+            value = json.load(handle)
+        # Valid JSON of the WRONG SHAPE is its own failure: a file holding a bare
+        # string parsed fine, and the caller then iterated its characters and
+        # logged ten warnings. Shape is part of being readable.
+        if default is not None and not isinstance(value, type(default)):
+            print(f"⚠  saved {name} has the wrong shape — starting empty")
+            return default
+        return value
     except FileNotFoundError:
+        return default
+    except RecursionError:                  # pathological nesting
+        print(f"⚠  saved {name} is malformed — starting empty")
         return default
     except (OSError, ValueError) as exc:
         # Corrupt or unreadable: start clean rather than refusing to boot.
