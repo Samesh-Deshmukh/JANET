@@ -197,8 +197,8 @@ def main():
     alarm_action.restore(restore_ctx)
     timer_action.restore(restore_ctx)
     reminder_action.restore(restore_ctx)
-    listener = threading.Thread(target=_capture, args=(utterances, stop_event),
-                                name="janet-capture", daemon=True)
+    listener = (threading.Thread(target=_capture, args=(utterances, stop_event),
+                                name="janet-capture", daemon=True))
     listener.start()
 
     # The main thread does the thinking. Keeping it here (rather than on a third

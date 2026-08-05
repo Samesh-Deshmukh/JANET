@@ -869,12 +869,6 @@ you're into "does it have Python 3.11, a sound server, and 10 GB free" territory
 — and if the answer is yes, the two files above are still the only thing
 standing between you and a talking assistant.
 
-For the record: **TempleOS is out.** No Python, no networking by design, no
-PortAudio, and a single-address-space ring-0 model that would take a very dim
-view of a 268 MB transformer. Terry would also have had strong opinions about
-asking a 14-billion-parameter language model what time it is. Respect — but
-you'll want a different machine for this one.
-
 ---
 
 ## Where to go next
