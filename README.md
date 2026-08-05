@@ -2,16 +2,83 @@
 
 **Just Another Neural Execution Tool** — a fully-local, privacy-first, wake-word-free voice assistant.
 
-Everything runs on-device. No cloud calls for core functions; no wake word to press or say — JANET listens continuously and works out for itself when you're talking to it.
+## What is JANET?
 
-> **Status: working prototype.** The audio pipeline, the intent brain (addressing scorer + trained classifier), and **every intent handler** are built: time, date, timers, alarms, reminders, maths, calendar, weather, smart home, email, system control, and open-ended questions. A local LLM does all the talking — handlers produce facts, the model turns them into speech.
+JANET is a voice assistant that runs **entirely on your own computer**. You talk
+to it; it listens, works out whether you were talking to *it*, does the thing,
+and answers out loud. No account, no subscription, no audio leaving the machine.
 
-### 📦 Installing it
+The difference from Alexa or Siri isn't just privacy — it's that **there's no
+wake word.** You don't prefix every sentence with "Hey Janet." It listens all the
+time and decides for itself whether a given sentence was meant for it. That's a
+harder problem than it sounds, and most of this repo is the machinery for getting
+it right: two cheap gates that stay silent by default, and a local language model
+that gets the final say when they're unsure.
+
+### What it's actually like
+
+Every line below is real output, not a mock-up — captured by running the
+conversation through the pipeline:
+
+```
+you   : Janet, set a timer for 10 minutes
+JANET : I've set a timer for 10 minutes.
+
+you   : how much time is left?                    ← no name needed
+JANET : There's 9 minutes and 59 seconds left.
+
+you   : I should probably set an alarm for tomorrow morning
+JANET : (silence)                                 ← you weren't talking to it
+
+you   : Janet, what's the weather?
+JANET : It's 22 degrees and partly cloudy in Pune.
+
+you   : and tomorrow?                             ← scores ZERO on both gates
+JANET : Tomorrow, it will be rainy in Pune with a high of 27.6C and a low of 21.2C.
+```
+
+Three things are happening there that are worth naming:
+
+- **"how much time is left?"** works without saying "Janet" — the sentence is
+  shaped like a request, and that's enough.
+- **The alarm sentence is ignored.** It contains the word "alarm" and it's about
+  setting one, but you were thinking out loud. JANET checked and stayed quiet.
+  For an always-on mic, *not answering* is the feature.
+- **"and tomorrow?"** scores **0** — no question word, no command, no keyword,
+  no name. Both gates would drop it. The language model is the only part of JANET
+  holding the conversation, so it gets asked, recognises a follow-up, and calls
+  the weather tool itself.
+
+### What makes it different
+
+| | |
+|---|---|
+| 🎙 **No wake word** | It works out when it's being addressed. Saying "Janet" helps, but plenty of sentences don't need it. |
+| 🔒 **Nothing leaves your machine** | Speech recognition, intent, and the language model are all local. Only the optional calendar/weather/smart-home/email integrations touch the network, and each has a self-hostable or fake option. |
+| 🤫 **Silence is the default** | Two gates must *both* agree before it says anything. An always-listening assistant that answers the television is worse than one that misses a question. |
+| ✋ **It asks before anything irreversible** | Creating a calendar event or sending an email gets stated back and waits for a spoken yes. Some things — shutdown, door locks — it simply refuses to do at all. |
+| 🚫 **It can't claim it did something it didn't** | If no action ran, no reply is allowed to say one did. This is enforced mechanically, not just asked for politely. |
+
+### What it isn't
+
+Being straight about scope: this is a **working prototype and a learning
+project**, not a product. It has no installer, no GUI, and no packaging. It's
+developed on Linux (WSL2 works; macOS and Windows need [two short files
+ported](instructions.md#13-macos-windows-and-everything-else)). It wants a GPU
+and about 10 GB of disk. Text-to-speech is still espeak-ng, which sounds like
+1995 — Piper is the next job.
+
+What *is* done: the full audio pipeline, both intent gates, all twelve intent
+handlers, four integrations with fake backends, persistence, the confirmation
+gate, and the agent layer.
+
+## 📦 Install
 
 **[instructions.md](instructions.md)** is the full setup guide — system packages
-for every major distro, the CUDA-vs-CPU split in `requirements.txt`, training the
-intent classifier (**required** — the trained model is gitignored, so it isn't in
-your clone), picking an LLM for your hardware, and a troubleshooting section.
+for every major distro plus macOS/Windows, the CUDA-vs-CPU split in
+`requirements.txt`, training the intent classifier (**required** — the trained
+model is gitignored, so it isn't in your clone), picking an LLM for your
+hardware, and a troubleshooting section.
 
 The 60-second version, for the impatient:
 
@@ -23,28 +90,55 @@ cd src && python -m intent.train    # ~16s on a GPU — you MUST do this
 python main.py                      # then just talk
 ```
 
-A microphone, a speaker, and ~10 GB of disk. Linux (or WSL2 on Windows 11) runs
-it as-is; macOS and native Windows need two short files ported, and
-[§13](instructions.md#13-macos-windows-and-everything-else) gives you both.
+A microphone, a speaker, and ~10 GB of disk.
 [Details, and what to do when it doesn't work →](instructions.md)
 
 ## Contents
 
+**Start here**
 | | |
 |---|---|
-| [The pipeline](#the-pipeline) | How an utterance becomes a reply, and the two gates that can stop it |
+| [How it works](#how-it-works) | How an utterance becomes a reply, and the two gates that can stop it |
 | [Current capabilities](#current-capabilities) | Everything you can say to it |
+| [Running it](#running-it) | Starting it, the LLM server, and reading its console output |
+
+**How it's built**
+| | |
+|---|---|
 | [The LLM does the talking](#the-llm-does-the-talking) | Why handlers return facts instead of sentences |
 | [Staying responsive](#staying-responsive) | The three threads, and the timings that forced them |
-| [Checking it still works](#checking-it-still-works) | The two check suites |
 | [Integrations](#integrations) | Calendar, weather, smart home, email — each with a demo backend |
-| [Asking before acting](#asking-before-acting) | The spoken confirmation gate, and what's refused outright |
-| [JANET as an agent](#janet-as-an-agent) | Running code, editing its own source, and the containment around both |
-| [Getting started](#getting-started) | The short form of [instructions.md](instructions.md) |
-| [Training the intent classifier](#training-the-intent-classifier) | Required for a fresh clone |
 | [Project layout](#project-layout) | Where everything lives |
 
-## The pipeline
+**Safety and trust**
+| | |
+|---|---|
+| [Asking before acting](#asking-before-acting) | The spoken confirmation gate, and what's refused outright |
+| [JANET as an agent](#janet-as-an-agent) | Running code, editing its own source, and the containment around both |
+| [Checking it still works](#checking-it-still-works) | The two check suites |
+
+**Maintaining it**
+| | |
+|---|---|
+| [Training the intent classifier](#training-the-intent-classifier) | Required for a fresh clone |
+| [Principles](#principles) · [Target stack](#target-stack) | The rules the code is held to |
+
+## How it works
+
+In plain terms, one sentence at a time:
+
+1. The microphone runs continuously, and **Silero VAD** watches for the moment
+   speech starts and stops. That slice of audio is one *utterance*.
+2. **Whisper** transcribes it locally.
+3. Two cheap gates decide whether it was aimed at JANET at all. If either says
+   no, JANET stays silent and nothing further runs.
+4. If it passes, a **handler** does the actual work — sets the timer, reads the
+   calendar, switches the light — and returns plain **facts**, not a sentence.
+5. A **local language model** turns those facts, plus the conversation so far,
+   into what you actually hear.
+6. **espeak-ng** speaks it.
+
+The whole path, with the file that owns each stage:
 
 ```
 Mic ─► VAD ─► Whisper ─► [pending yes/no?] ─► Scorer ─► Classifier ─► Action ─► LLM ─► TTS
@@ -67,23 +161,13 @@ Nothing is spoken unless **both** gates agree the utterance is a real request *t
 
 If either gate says no, JANET stays silent — which matters a lot for an always-listening mic.
 
-**With one exception.** Both gates judge a single sentence with no idea what JANET
-just said, so short follow-ups fall straight through them:
-
-```
-you:   Janet, what's the weather?
-JANET: It's 22 degrees and partly cloudy in Pune.
-you:   and tomorrow?                      ← scores 0. Silence.
-```
+**With one exception** — the *"and tomorrow?"* case from the conversation at the
+top. Both gates judge a single sentence with no idea what JANET just said, so a
+short follow-up scores 0 and falls straight through them.
 
 So before going quiet, JANET asks the LLM — the only part of it that actually has
 the conversation — whether it was being talked to. If yes, the utterance is
-answered and can use the tools below:
-
-```
-you:   and tomorrow?
-JANET: It's going to be rainy in Pune tomorrow, with a high of 27.6C.
-```
+answered and can use the tools below.
 
 That check only runs when JANET spoke in the last 30 seconds *and the utterance
 is short*, or the score was near the line — so a quiet room, or a background
@@ -143,6 +227,64 @@ Every intent the classifier recognises now has a handler:
 | **GENERAL** | anything else → answered by the local LLM |
 
 Anything JANET decides wasn't addressed to it gets **silence**, not a reply.
+
+## Running it
+
+*Installing it is [📦 Install](#-install) above, or
+[instructions.md](instructions.md) in full. This is what happens once it's set
+up.*
+
+```bash
+source venv/bin/activate
+cd src && python main.py          # from src/, as your normal user — see below
+```
+
+Two rules about *how* you start it, both of which fail silently rather than
+loudly if you get them wrong:
+
+- **Not `sudo`.** A per-user PipeWire mic is unreachable as root, so capture
+  comes out empty with no error at all.
+- **From inside `src/`.** Modules import by top-level package
+  (`from intent.scorer import score`), so `src/` has to be the working directory.
+
+**You also need a local LLM running**, since it is JANET's voice. Either works:
+
+```bash
+# llama.cpp (default) — fastest if you give it the whole GPU
+llama-server -m /path/to/qwen3-14b-instruct-q4_k_m.gguf -ngl 999 -c 8192 --port 8081
+
+# or Ollama, with JANET_LLM_URL=http://127.0.0.1:11434/v1 in your .env
+ollama pull qwen3:14b && ollama serve
+```
+
+Don't run both at once on one GPU: the second copy of the weights gets squeezed
+onto the CPU and every reply becomes 3-5x slower. Without any model JANET still
+works, but falls back to plain canned replies and says so.
+
+Nothing in `.env` is required: the time, timers, alarms, reminders, maths, system
+control and the local LLM all work with no configuration at all.
+
+**Then just talk.** There's nothing to press and no wake word to say. Silero VAD
+detects when you start and stop speaking (a short pre-roll buffer keeps your
+first word), and the console shows the decision on every utterance:
+
+```
+🗣  You said: Janet, what time is it?
+🧠 Intent: TIME (91%)
+🛡  Score: 115 (janet +50, question +40, keyword +25) → addressed
+⚙️  Reply: It's 8:33 PM.
+💭 Why: The time is given in the facts.
+```
+
+When JANET stays quiet it says why, which is most of what you need to debug it —
+`🛡 … → ignored` is a gate refusing outright, `🤔 … → not for me` is the LLM
+agreeing after a second look, and `🤔 … → rescued` is the LLM overruling them
+both. `Ctrl-C` to quit.
+
+Mishearings are the usual cause of "why didn't it answer me". `JANET_DEBUG_AUDIO=1`
+saves each utterance as a WAV with its duration, which tells a capture problem
+apart from a model one — [instructions.md §11](instructions.md#11-troubleshooting)
+walks through the rest.
 
 ## The LLM does the talking
 
@@ -408,66 +550,6 @@ change didn't *break* anything; only reading the diff shows what it *took away*.
 
 Those are the same suites from [Checking it still works](#checking-it-still-works)
 — JANET runs them against its own proposed diff before handing it to you.
-
-## Getting started
-
-> **Full setup guide: [instructions.md](instructions.md).** Per-distro system
-> packages, the CUDA-vs-CPU fork in `requirements.txt`, choosing an LLM for your
-> hardware, and troubleshooting. This section is the short form.
-
-Requires audio hardware (mic + speaker) and **Python 3.11**. Developed and tested
-on **Linux** with PipeWire; **WSL2 on Windows 11** works unmodified (WSLg
-provides PulseAudio and mic passthrough). **macOS and native Windows** need two
-short files ported — `audio/tts.py` and `utils/volume.py`, which are the only
-platform-specific code in the repo;
-[instructions.md §13](instructions.md#13-macos-windows-and-everything-else) has
-working replacements for both.
-
-Run as your **normal user** (not `sudo` — a per-user PipeWire mic is unreachable
-as root, and capture comes out silent with no error).
-
-```bash
-sudo pacman -S espeak-ng libpulse portaudio          # Arch; see instructions.md for other distros
-python3.11 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cd src && python -m intent.train  # REQUIRED on a fresh clone — see below
-cp ../.env.example ../.env        # optional — see below
-python main.py                    # runs from src/ — see the import note below
-```
-
-**You need a local LLM running**, since it is JANET's voice. Either works:
-
-```bash
-# llama.cpp (default) — fastest if you give it the whole GPU
-llama-server -m /path/to/qwen3-14b-instruct-q4_k_m.gguf -ngl 999 -c 8192 --port 8081
-
-# or Ollama, with JANET_LLM_URL=http://127.0.0.1:11434/v1 in your .env
-ollama pull qwen3:14b && ollama serve
-```
-
-Don't run both at once on one GPU: the second copy of the weights gets squeezed
-onto the CPU and every reply becomes 3-5x slower. Without any model JANET still
-works, but falls back to plain canned replies and says so.
-
-Nothing in `.env` is required: the time, timers, alarms, reminders, maths, system
-control and the local LLM all work with no configuration at all.
-
-Then just talk. Silero VAD detects when you start and stop speaking (a short pre-roll buffer keeps your first word). Each utterance is transcribed, run through the two gates, and — if it's for JANET — acted on and spoken. The console shows the decision on every utterance:
-
-```
-🗣  You said: Janet, what time is it?
-🧠 Intent: TIME (91%)
-🛡  Score: 115 (janet +50, question +40, keyword +25) → addressed
-⚙️  Reply: It's 8:33 PM.
-💭 Why: The time is given in the facts.
-```
-
-When JANET stays quiet it says why, which is most of what you need to debug it —
-`🛡 … → ignored` is a gate refusing outright, `🤔 … → not for me` is the LLM
-agreeing after a second look, and `🤔 … → rescued` is the LLM overruling them
-both. `Ctrl-C` to quit.
-
-> **Import convention:** modules import by top-level package (`from intent.scorer import score`), so `src/` must be the working directory — run from inside `src/`, not the repo root.
 
 ## Training the intent classifier
 
