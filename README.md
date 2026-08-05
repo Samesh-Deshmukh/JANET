@@ -4,7 +4,45 @@
 
 Everything runs on-device. No cloud calls for core functions; no wake word to press or say — JANET listens continuously and works out for itself when you're talking to it.
 
-> **Status: working prototype.** The audio pipeline, the intent brain (addressing scorer + trained classifier), and **every intent handler** are built: time, date, timers, alarms, reminders, maths, calendar, weather, smart home, email, system control, and open-ended questions. Since the latest change, **a local LLM does all the talking** — handlers produce facts, the model turns them into speech. This is also a personal learning project — the code favours being understandable over clever.
+> **Status: working prototype.** The audio pipeline, the intent brain (addressing scorer + trained classifier), and **every intent handler** are built: time, date, timers, alarms, reminders, maths, calendar, weather, smart home, email, system control, and open-ended questions. A local LLM does all the talking — handlers produce facts, the model turns them into speech.
+
+### 📦 Installing it
+
+**[instructions.md](instructions.md)** is the full setup guide — system packages
+for every major distro, the CUDA-vs-CPU split in `requirements.txt`, training the
+intent classifier (**required** — the trained model is gitignored, so it isn't in
+your clone), picking an LLM for your hardware, and a troubleshooting section.
+
+The 60-second version, for the impatient:
+
+```bash
+git clone https://github.com/Samesh-Deshmukh/JANET.git && cd JANET
+python3.11 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+cd src && python -m intent.train    # ~16s on a GPU — you MUST do this
+python main.py                      # then just talk
+```
+
+A microphone, a speaker, and ~10 GB of disk. Linux (or WSL2 on Windows 11) runs
+it as-is; macOS and native Windows need two short files ported, and
+[§13](instructions.md#13-macos-windows-and-everything-else) gives you both.
+[Details, and what to do when it doesn't work →](instructions.md)
+
+## Contents
+
+| | |
+|---|---|
+| [The pipeline](#the-pipeline) | How an utterance becomes a reply, and the two gates that can stop it |
+| [Current capabilities](#current-capabilities) | Everything you can say to it |
+| [The LLM does the talking](#the-llm-does-the-talking) | Why handlers return facts instead of sentences |
+| [Staying responsive](#staying-responsive) | The three threads, and the timings that forced them |
+| [Checking it still works](#checking-it-still-works) | The two check suites |
+| [Integrations](#integrations) | Calendar, weather, smart home, email — each with a demo backend |
+| [Asking before acting](#asking-before-acting) | The spoken confirmation gate, and what's refused outright |
+| [JANET as an agent](#janet-as-an-agent) | Running code, editing its own source, and the containment around both |
+| [Getting started](#getting-started) | The short form of [instructions.md](instructions.md) |
+| [Training the intent classifier](#training-the-intent-classifier) | Required for a fresh clone |
+| [Project layout](#project-layout) | Where everything lives |
 
 ## The pipeline
 
@@ -209,7 +247,7 @@ default, or **Ollama**. Everything stays on-device either way.
 
 JANET also keeps a **short-term conversation memory** (`utils/history.py`) — the last few addressed exchanges are fed back to the LLM, so follow-ups work: *"what's the capital of France?"* → *"Paris"*, then *"what about Germany?"* → *"Berlin."* It's in-memory and resets on restart.
 
-**ALARM** sets one-shot, specific-day, and recurring alarms by voice and can cancel them — *"set an alarm for 7 AM"*, *"set an alarm for 8 on Wednesday"*, *"every weekday at 8"*, *"cancel the alarm"*. A bare time resolves to the soonest future occurrence (parsing in `intent/timeparse.py`, scheduling in `actions/alarm_action.py`). Alarms are in-memory and reset on restart.
+**ALARM** sets one-shot, specific-day, and recurring alarms by voice and can cancel them — *"set an alarm for 7 AM"*, *"set an alarm for 8 on Wednesday"*, *"every weekday at 8"*, *"cancel the alarm"*. A bare time resolves to the soonest future occurrence (parsing in `intent/timeparse.py`, scheduling in `actions/alarm_action.py`). Alarms are saved to disk and re-armed on restart — see [Asking before acting](#asking-before-acting) for what happens to one that came due while JANET was off.
 
 **CALC** works on a principle worth stating plainly: **the language model translates, and a real maths library computes.** Models are fluent and unreliable at arithmetic; SymPy is the reverse. So the model only turns your sentence into an expression — it never calculates, and it never writes executable code (the operation is picked from a fixed list, and expressions are vetted as syntax before anything can run them).
 
@@ -368,21 +406,33 @@ test both times, because the behaviour was identical. Telling it not to didn't
 help, so JANET now diffs before and after and says what vanished. Tests prove a
 change didn't *break* anything; only reading the diff shows what it *took away*.
 
-Run the same checks yourself any time:
-
-```bash
-venv/bin/python tools/smoke.py     # 30 checks over the real pipeline
-```
+Those are the same suites from [Checking it still works](#checking-it-still-works)
+— JANET runs them against its own proposed diff before handing it to you.
 
 ## Getting started
 
-Requires audio hardware (mic + speaker) and **Python 3.11**. Run as your **normal user** (not `sudo` — a per-user PipeWire mic is unreachable as root).
+> **Full setup guide: [instructions.md](instructions.md).** Per-distro system
+> packages, the CUDA-vs-CPU fork in `requirements.txt`, choosing an LLM for your
+> hardware, and troubleshooting. This section is the short form.
+
+Requires audio hardware (mic + speaker) and **Python 3.11**. Developed and tested
+on **Linux** with PipeWire; **WSL2 on Windows 11** works unmodified (WSLg
+provides PulseAudio and mic passthrough). **macOS and native Windows** need two
+short files ported — `audio/tts.py` and `utils/volume.py`, which are the only
+platform-specific code in the repo;
+[instructions.md §13](instructions.md#13-macos-windows-and-everything-else) has
+working replacements for both.
+
+Run as your **normal user** (not `sudo` — a per-user PipeWire mic is unreachable
+as root, and capture comes out silent with no error).
 
 ```bash
-python -m venv venv && source venv/bin/activate
+sudo pacman -S espeak-ng libpulse portaudio          # Arch; see instructions.md for other distros
+python3.11 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env              # optional — see below
-cd src && python main.py          # runs from src/ — see the import note below
+cd src && python -m intent.train  # REQUIRED on a fresh clone — see below
+cp ../.env.example ../.env        # optional — see below
+python main.py                    # runs from src/ — see the import note below
 ```
 
 **You need a local LLM running**, since it is JANET's voice. Either works:
@@ -405,25 +455,42 @@ control and the local LLM all work with no configuration at all.
 Then just talk. Silero VAD detects when you start and stop speaking (a short pre-roll buffer keeps your first word). Each utterance is transcribed, run through the two gates, and — if it's for JANET — acted on and spoken. The console shows the decision on every utterance:
 
 ```
-🗣  You said: what time is it
-🛡  Score: 65 (question +40, keyword +25) → addressed
-🧠 Intent: TIME (89%)
-⚙️  Reply: The time is 07:51 PM
+🗣  You said: Janet, what time is it?
+🧠 Intent: TIME (91%)
+🛡  Score: 115 (janet +50, question +40, keyword +25) → addressed
+⚙️  Reply: It's 8:33 PM.
+💭 Why: The time is given in the facts.
 ```
 
-`Ctrl-C` to quit.
+When JANET stays quiet it says why, which is most of what you need to debug it —
+`🛡 … → ignored` is a gate refusing outright, `🤔 … → not for me` is the LLM
+agreeing after a second look, and `🤔 … → rescued` is the LLM overruling them
+both. `Ctrl-C` to quit.
 
 > **Import convention:** modules import by top-level package (`from intent.scorer import score`), so `src/` must be the working directory — run from inside `src/`, not the repo root.
 
 ## Training the intent classifier
 
-The classifier is fine-tuned locally (a GPU helps but isn't required):
+**A fresh clone has no trained model** — `data/models/` is gitignored, so this is
+a required setup step, not an optional one. JANET won't start without it (it
+fails with a message telling you to run exactly this):
 
 ```bash
 cd src && python -m intent.train
 ```
 
-This reads the labelled dataset in `data/text/{train,val}/`, fine-tunes `distilbert-base-uncased`, prints per-class metrics + a confusion matrix, and saves the model to `data/models/intent-distilbert/` (gitignored). Validate the dataset's format with `python data/text/validate.py`.
+This reads the labelled dataset in `data/text/{train,val}/` — 2,005 training and
+504 validation utterances across 13 labels, all committed — fine-tunes
+`distilbert-base-uncased`, prints per-class metrics + a confusion matrix, and
+saves the model to `data/models/intent-distilbert/`.
+
+Measured on an RTX 5060 Ti: **16 seconds, 97.2% validation accuracy** (macro F1
+0.974). Budget 10–20 minutes on a CPU — a GPU helps but genuinely isn't required.
+
+Validate the dataset's format with `python data/text/validate.py`. And since the
+data is just text files — one utterance per line, one file per label — **adding
+the way you actually talk and retraining is the cheapest way to make JANET
+understand you better.**
 
 ## Project layout
 
@@ -444,9 +511,20 @@ src/
   utils/             context, conversation memory (history.py), confirm gate, helpers
 data/
   text/              intent dataset (train/val), labels.txt, validate.py
-  models/            trained model (gitignored)
+  models/            trained model — GITIGNORED, you train it (instructions.md §5)
+  state/             saved alarms/timers/reminders (gitignored, made at runtime)
   transcripts/       per-day JSONL of every turn (gitignored)
+tools/
+  smoke.py           30 checks over the real pipeline — the fast gate
+  full_check.py      69 checks — every intent, gate and guard
+instructions.md      full setup guide
+.env.example         every setting, documented inline
 ```
+
+**A fresh clone is missing a few things by design** — the trained model, `.env`,
+your saved alarms, and the transcripts. Everything needed to rebuild them is
+committed; [instructions.md §10](instructions.md#10-what-your-clone-does-not-contain)
+lists exactly what's absent and what to do about each.
 
 ## Principles
 
