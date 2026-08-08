@@ -1,0 +1,103 @@
+{"id": "n01", "tag": "named", "context": [], "utterance": "Janet, what time is it?", "addressed": true, "note": "real transcript 08-05"}
+{"id": "n02", "tag": "named", "context": [], "utterance": "Janet, what's the weather?", "addressed": true, "note": "real transcript 08-05"}
+{"id": "n03", "tag": "named", "context": [], "utterance": "Janet, set a timer for 5 minutes", "addressed": true, "note": "real transcript 08-05"}
+{"id": "n04", "tag": "named", "context": [], "utterance": "Janet, what is on my calendar today?", "addressed": true, "note": "real transcript 08-05"}
+{"id": "n05", "tag": "named", "context": [], "utterance": "Janet, do I have any unread emails?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "n06", "tag": "named", "context": [], "utterance": "Janet, turn on the living room lights", "addressed": true, "note": "real transcript 08-05"}
+{"id": "n07", "tag": "named", "context": [], "utterance": "Janet, what's 25% of 52?", "addressed": true, "note": "real transcript 08-05"}
+{"id": "n08", "tag": "named", "context": [], "utterance": "Hey Janet, can you write a better score?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "n09", "tag": "named", "context": [], "utterance": "Janet, what classes do I have on Monday?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "n10", "tag": "named", "context": [], "utterance": "Good evening, Janet.", "addressed": true, "note": "real transcript 08-02; a greeting is addressed"}
+{"id": "n11", "tag": "named", "context": [], "utterance": "Janet, it's dark in here", "addressed": true, "note": "real transcript; indirect command"}
+{"id": "n12", "tag": "named", "context": [], "utterance": "Janet, how long until midnight?", "addressed": true, "note": "real transcript"}
+{"id": "n13", "tag": "named", "context": [], "utterance": "So Janet, can you add an event for tomorrow? 6 PM.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "n14", "tag": "named", "context": [], "utterance": "Janet, what is an NLI model?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "n15", "tag": "named", "context": [], "utterance": "Janet, kill the kitchen lights", "addressed": true, "note": "real transcript"}
+{"id": "n16", "tag": "named", "context": [], "utterance": "Janet, am I busy this morning?", "addressed": true, "note": "real transcript"}
+{"id": "n17", "tag": "named", "context": [], "utterance": "In January, what is 25% of 20?", "addressed": true, "note": "real transcript; Whisper mangled the name into 'In January'"}
+{"id": "n18", "tag": "named", "context": [], "utterance": "The other things work. Janet, are you listening to us?", "addressed": true, "note": "real transcript 08-08; the second half is addressed"}
+{"id": "c01", "tag": "command", "context": [], "utterance": "turn on the kitchen lights", "addressed": true, "note": "real transcript 08-05"}
+{"id": "c02", "tag": "command", "context": [], "utterance": "what can you do", "addressed": true, "note": "real transcript 08-07"}
+{"id": "c03", "tag": "command", "context": [], "utterance": "shut down the computer", "addressed": true, "note": "real transcript 08-07; addressed even though JANET refuses it"}
+{"id": "c04", "tag": "command", "context": [], "utterance": "reply to my last email saying I'll be there at 5", "addressed": true, "note": "real transcript 08-07"}
+{"id": "c05", "tag": "command", "context": [], "utterance": "remind me to call the bank", "addressed": true, "note": "real transcript 08-07"}
+{"id": "c06", "tag": "command", "context": [], "utterance": "Set a timer for 30 seconds.", "addressed": true, "note": "real transcript"}
+{"id": "c07", "tag": "command", "context": [], "utterance": "What's the weather in London tomorrow?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c08", "tag": "command", "context": [], "utterance": "Can you set the volume to 55%?", "addressed": true, "note": "real transcript"}
+{"id": "c09", "tag": "command", "context": [], "utterance": "Show me the calendar.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c10", "tag": "command", "context": [], "utterance": "Check my email for me.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c11", "tag": "command", "context": [], "utterance": "Can you tell me the weather in Bangalore today?", "addressed": true, "note": "real transcript 08-02"}
+{"id": "c12", "tag": "command", "context": [], "utterance": "What is the integral of x squared?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c13", "tag": "command", "context": [], "utterance": "say that again", "addressed": true, "note": "real transcript 08-07"}
+{"id": "c14", "tag": "command", "context": [], "utterance": "Can you remove lunch with Alex?", "addressed": true, "note": "real transcript"}
+{"id": "c15", "tag": "command", "context": [], "utterance": "Add an event for Sunday at 6.30 p.m. to 9 p.m.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c16", "tag": "command", "context": [], "utterance": "am i free tomorrow afternoon?", "addressed": true, "note": "real transcript"}
+{"id": "c17", "tag": "command", "context": [], "utterance": "plan me a cheap 3 day trip to japan", "addressed": true, "note": "real transcript"}
+{"id": "c18", "tag": "command", "context": [], "utterance": "What is the escape velocity from Earth?", "addressed": true, "note": "real transcript 08-02"}
+{"id": "c19", "tag": "command", "context": [], "utterance": "schedule a dentist appointment tomorrow at 3 pm", "addressed": true, "note": "real transcript"}
+{"id": "c20", "tag": "command", "context": [], "utterance": "Can you add events to the calendar?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c21", "tag": "command", "context": [], "utterance": "What calculus can you do?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "c22", "tag": "command", "context": [], "utterance": "unmute", "addressed": true, "note": "one-word SYSTEM command; scored 0 until 'unmute' was added to the keyword list"}
+{"id": "c23", "tag": "command", "context": [], "utterance": "volume down", "addressed": true, "note": "scored 0 on the heuristic until 'volume' was added as a head word"}
+{"id": "c24", "tag": "command", "context": [], "utterance": "what is 25 percent of 52", "addressed": true, "note": "real transcript"}
+{"id": "f01", "tag": "followup", "context": [["Janet, what's the weather?", "It's 22 degrees and partly cloudy in Pune."]], "utterance": "and tomorrow?", "addressed": true, "note": "real transcript 08-05; the heuristic scores this 0"}
+{"id": "f02", "tag": "followup", "context": [["Janet, what's the weather?", "It's 22 degrees and partly cloudy in Pune."]], "utterance": "what about in Delhi?", "addressed": true, "note": "real transcript 08-05"}
+{"id": "f03", "tag": "followup", "context": [["what is on my calendar today", "You have 3 events today: Company holiday, Standup at 9 AM, and Lunch with Alex at 12:30 PM."]], "utterance": "how about friday?", "addressed": true, "note": "real transcript; passes the scorer at 40 then the classifier gives CALENDAR 38%"}
+{"id": "f04", "tag": "followup", "context": [["Janet, set a timer for 5 minutes", "I've set a timer for 5 minutes."]], "utterance": "how much time is left?", "addressed": true, "note": "real transcript 08-05"}
+{"id": "f05", "tag": "followup", "context": [["Janet, do I have any unread emails?", "You have one unread email."]], "utterance": "What does the email say?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "f06", "tag": "followup", "context": [["Janet, what classes do I have on Monday?", "You have 13 events on Monday, starting with Bus at 6:30 AM, Maths at 7:30 AM, Bio at 8:10 AM."]], "utterance": "Can you just say the subjects? I don't need to know the time.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "f07", "tag": "followup", "context": [["What is 30x squared plus 45x minus 50 equals zero?", "The solutions are x equals 0.743 and negative 2.243."]], "utterance": "Does that previous equation have a rational solution?", "addressed": true, "note": "real transcript 08-08"}
+{"id": "f08", "tag": "followup", "context": [["Can you tell me the weather in Bangalore today?", "It's 22 degrees and partly cloudy in Bangalore."]], "utterance": "And what about deli?", "addressed": true, "note": "real transcript 08-02; Whisper mangled 'Delhi'"}
+{"id": "f09", "tag": "followup", "context": [["Janet, can you answer some physics questions for me?", "Sure, I can help with that. What's your first question?"]], "utterance": "What is the gravity?", "addressed": true, "note": "real transcript 08-02"}
+{"id": "f10", "tag": "followup", "context": [["Can you tell me all the pieces of chess?", "There are 16 pieces for each player, including 1 king, 1 queen, 2 rooks, 2 knights, 2 bishops, and 8 pawns."]], "utterance": "What is the most common opening played by white?", "addressed": true, "note": "real transcript 08-02"}
+{"id": "f11", "tag": "followup", "context": [["What is the integral of x squared?", "The integral of x squared is x cubed over three plus C."]], "utterance": "What is the derivative?", "addressed": true, "note": "real transcript 08-08; only makes sense inside the maths conversation"}
+{"id": "f12", "tag": "followup", "context": [["Janet, what is the weather like today?", "I can't check the weather right now. Let me know if there's something else I can do."]], "utterance": "What do you mean?", "addressed": true, "note": "real transcript 08-02"}
+{"id": "f13", "tag": "followup", "context": [["Janet, what's the weather?", "It's 22 degrees and partly cloudy in Pune."], ["and tomorrow?", "Tomorrow in Pune it will be rainy with a high of 27.6 and a low of 21.2."]], "utterance": "what should i wear then", "addressed": true, "note": "two-turn follow-up chain"}
+{"id": "a01", "tag": "answer", "context": [["Can you enter a calendar event for me tomorrow morning 9 AM?", "Shall I add a calendar event for tomorrow at 9 AM?"]], "utterance": "Yes.", "addressed": true, "note": "real transcript 08-02; a bare yes scores 0"}
+{"id": "a02", "tag": "answer", "context": [["Janet, could you remove lunch with Alex?", "Shall I remove Lunch with Alex, today at 12:30 PM?"]], "utterance": "Oh yeah.", "addressed": true, "note": "real transcript; a padded yes was lost in live testing"}
+{"id": "a03", "tag": "answer", "context": [["So Janet, can you add an event for tomorrow? 6 PM.", "What should I call the event?"]], "utterance": "Yeah, call it basketball.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "a04", "tag": "answer", "context": [["I just need to turn on the alarm.", "I can help with that. What time would you like the alarm to go off?"]], "utterance": "Atm every weekday.", "addressed": true, "note": "real transcript; Whisper mangled '8 am every weekday'"}
+{"id": "a05", "tag": "answer", "context": [["remind me to call the bank", "When should I remind you to call the bank?"]], "utterance": "at 5 pm", "addressed": true, "note": "real transcript 08-07 shape"}
+{"id": "a06", "tag": "answer", "context": [["Janet, could you remove lunch with Alex?", "Shall I remove Lunch with Alex, today at 12:30 PM?"]], "utterance": "Oh no, it's okay.", "addressed": true, "note": "a padded no; lost in live testing"}
+{"id": "a07", "tag": "answer", "context": [["Look at my calendar and tell me when does my schedule end on Monday.", "When should I schedule that?"]], "utterance": "No, if you don't mind. Tell me when the schedule ends on Monday.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "a08", "tag": "answer", "context": [["Can you add events to the calendar?", "Yes, I can add events to your calendar. Would you like to add one now?"]], "utterance": "Sunday and Saturday from 6 30 p.m. to 9 p.m.", "addressed": true, "note": "real transcript 08-08"}
+{"id": "r01", "tag": "about_janet", "context": [["What's the weather in London tomorrow?", "Tomorrow in London it's cloudy with a high of 31 and a low of 20."]], "utterance": "Wait, what did it hear?", "addressed": false, "note": "real leak 08-08; talking ABOUT Janet to another person"}
+{"id": "r02", "tag": "about_janet", "context": [], "utterance": "Just Janet and the other person.", "addressed": false, "note": "real leak 08-08; contains the name but is not addressed to her"}
+{"id": "r03", "tag": "about_janet", "context": [], "utterance": "It started. Yeah, it started. You can talk to it.", "addressed": false, "note": "real leak 08-02, name-free half; two people discussing the assistant"}
+{"id": "r04", "tag": "about_janet", "context": [], "utterance": "Oh devices do you control? We don't have any so I just, it's a dummy thing but maybe we make the light as dummy. It doesn't matter whether the speaker is there.", "addressed": false, "note": "real leak 08-08; people talking about the setup"}
+{"id": "r05", "tag": "about_janet", "context": [], "utterance": "Let's have a competition between that number of degrees and your score.", "addressed": false, "note": "real leak 08-08"}
+{"id": "r06", "tag": "about_janet", "context": [], "utterance": "he set an alarm for 6am yesterday", "addressed": false, "note": "documented in scorer.py; a statement ABOUT an alarm, scores 25 on the heuristic"}
+{"id": "p01", "tag": "ambient_people", "context": [], "utterance": "What time do you get home?", "addressed": false, "note": "real leak 08-08; one person asking another"}
+{"id": "p02", "tag": "ambient_people", "context": [], "utterance": "Check your calendars, Samir.", "addressed": false, "note": "real leak 08-08; explicitly addressed to someone else"}
+{"id": "p03", "tag": "ambient_people", "context": [], "utterance": "What time is your school tomorrow? I'm almost 7.", "addressed": false, "note": "real leak 08-02; two people talking"}
+{"id": "p04", "tag": "ambient_people", "context": [], "utterance": "anyway what did you think of the film", "addressed": false, "note": "real transcript; person-to-person"}
+{"id": "p05", "tag": "ambient_people", "context": [], "utterance": "Who are you talking to?", "addressed": false, "note": "real transcript; person-to-person"}
+{"id": "p06", "tag": "ambient_people", "context": [], "utterance": "I don't know what you want me to say. You should turn them off.", "addressed": false, "note": "real leak 08-08"}
+{"id": "p07", "tag": "ambient_people", "context": [], "utterance": "can you pass me the salt", "addressed": false, "note": "documented in scorer.py; JANET has no body"}
+{"id": "p08", "tag": "ambient_people", "context": [], "utterance": "so then he told me he'd already booked the flight", "addressed": false, "note": "narration between people"}
+{"id": "p09", "tag": "ambient_people", "context": [], "utterance": "we should probably leave around seven if we want to beat the traffic", "addressed": false, "note": "planning between people"}
+{"id": "p10", "tag": "ambient_people", "context": [], "utterance": "mum says dinner is ready", "addressed": false, "note": "relaying a message to a person"}
+{"id": "p11", "tag": "ambient_people", "context": [], "utterance": "what do you think we should do about the car", "addressed": false, "note": "person-to-person; question-shaped, so it scores 40 on the heuristic"}
+{"id": "p12", "tag": "ambient_people", "context": [], "utterance": "no I told you I'd call them tomorrow", "addressed": false, "note": "person-to-person"}
+{"id": "p13", "tag": "ambient_people", "context": [], "utterance": "what time did you say the film starts", "addressed": false, "note": "person-to-person; contains 'time'"}
+{"id": "p14", "tag": "ambient_people", "context": [], "utterance": "can you remind him about the meeting", "addressed": false, "note": "about a third party; hits 'remind' and 'meeting'"}
+{"id": "p15", "tag": "ambient_people", "context": [], "utterance": "did you email sarah back about the invoice", "addressed": false, "note": "person-to-person; hits 'email'"}
+{"id": "p16", "tag": "ambient_people", "context": [], "utterance": "my calendar is completely full this week", "addressed": false, "note": "a statement, not a request; hits 'calendar' and 'my'"}
+{"id": "p17", "tag": "ambient_people", "context": [], "utterance": "he says the alarm goes off at six every morning", "addressed": false, "note": "a statement about an alarm"}
+{"id": "p18", "tag": "ambient_people", "context": [], "utterance": "turn the telly up a bit would you", "addressed": false, "note": "command-shaped, but aimed at a person in the room"}
+{"id": "m01", "tag": "ambient_media", "context": [], "utterance": "Why are we going this way?", "addressed": false, "note": "documented leak in dispatch.py; scored 40, GENERAL 66%, and was answered"}
+{"id": "m02", "tag": "ambient_media", "context": [], "utterance": "Because they're not brave enough. Now besides, which is kind of an uninteresting case, can you think of the smallest butt head double? I'll give you a hint.", "addressed": false, "note": "documented leak in addressing.py; a 31-word media chunk"}
+{"id": "m03", "tag": "ambient_media", "context": [], "utterance": "in this video I'm going to show you three ways to speed up your python code", "addressed": false, "note": "tutorial narration"}
+{"id": "m04", "tag": "ambient_media", "context": [], "utterance": "the thing about the second world war is that nobody expected it to last that long", "addressed": false, "note": "documentary narration"}
+{"id": "m05", "tag": "ambient_media", "context": [], "utterance": "and that's why the stock market crashed in nineteen twenty nine", "addressed": false, "note": "narration"}
+{"id": "m06", "tag": "ambient_media", "context": [], "utterance": "subscribe to the channel and hit the bell icon", "addressed": false, "note": "command-shaped, aimed at a video's audience"}
+{"id": "m07", "tag": "ambient_media", "context": [], "utterance": "coming up after the break we'll look at the weather across the region", "addressed": false, "note": "TV continuity; hits the 'weather' keyword"}
+{"id": "m08", "tag": "ambient_media", "context": [], "utterance": "so what do you think happens when you divide by zero", "addressed": false, "note": "rhetorical question to a video audience"}
+{"id": "m09", "tag": "ambient_media", "context": [], "utterance": "now set the oven to one eighty and leave it for forty minutes", "addressed": false, "note": "cooking show; command-shaped with 'set'"}
+{"id": "m10", "tag": "ambient_media", "context": [], "utterance": "tell me doctor how long has this been going on", "addressed": false, "note": "drama dialogue; head word 'tell'"}
+{"id": "m11", "tag": "ambient_media", "context": [], "utterance": "check out the link in the description for twenty percent off your first order", "addressed": false, "note": "sponsor read; head word 'check'"}
+{"id": "m12", "tag": "ambient_media", "context": [], "utterance": "what is the capital of france the answer is paris", "addressed": false, "note": "quiz show; a question JANET could answer but was not asked"}
+{"id": "k01", "tag": "ack", "context": [["Janet, what time is it?", "It's 8:33 PM."]], "utterance": "thanks", "addressed": false, "note": "acknowledgement; aimed at JANET but asks for nothing"}
+{"id": "k02", "tag": "ack", "context": [["Janet, set a timer for 5 minutes", "I've set a timer for 5 minutes."]], "utterance": "Okay.", "addressed": false, "note": "real transcript; closes the exchange"}
+{"id": "k03", "tag": "ack", "context": [["Janet, what's the weather?", "It's 22 degrees and partly cloudy in Pune."]], "utterance": "got it", "addressed": false, "note": "acknowledgement"}
+{"id": "k04", "tag": "ack", "context": [["turn on the kitchen lights", "I've turned on the kitchen lights."]], "utterance": "cool", "addressed": false, "note": "acknowledgement"}
