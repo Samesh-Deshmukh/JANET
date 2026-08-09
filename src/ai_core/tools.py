@@ -26,7 +26,14 @@ from typing import Callable
 # "will it rain tomorrow" came back as city="default_city". Treat all of these as
 # "no value given" rather than trying to look them up.
 _UNSET = {"", "default_city", "default", "none", "null", "here", "current",
-          "current_location", "my location", "unknown", "user_location"}
+          "current_location", "my location", "unknown", "user_location",
+          # "home" is the one the tool DESCRIPTION invites — it literally says
+          # "omit for home", so the model helpfully passes city="home". Live,
+          # that geocoded to Homyel in Belarus and JANET reported the weather
+          # there twice with total confidence. A placeholder that names a real
+          # place is worse than one that doesn't: "default_city" fails loudly,
+          # "home" fails as a plausible wrong answer.
+          "home", "my home", "house", "local"}
 
 
 def _given(args, key):
