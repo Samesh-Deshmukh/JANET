@@ -91,10 +91,12 @@ def _save_debug_audio(audio, transcript):
 def _preload():
     """Load every model before the first utterance instead of during it.
 
-    Measured: Whisper 2.0s + DistilBERT 1.6s + Silero 0.05s. Loaded lazily, that
-    whole 3.6s landed on the first thing you said after starting JANET, which is
-    exactly when it feels broken. Paid at startup it costs nothing — you aren't
-    talking yet.
+    Measured: Whisper 2.0s + DistilBERT 1.6s + Silero 0.05s + the NLI
+    addressing gate ~10s. Loaded lazily, all of that landed on the first thing
+    you said after starting JANET, which is exactly when it feels broken. Paid
+    at startup it costs nothing — you aren't talking yet. The NLI model is by
+    far the biggest of the four now, so this function earns its keep more than
+    it used to.
     """
     print("⏳ Warming up models...")
     SpeechDetector()                        # Silero, cached in a module singleton
@@ -102,6 +104,8 @@ def _preload():
     _get_model()                            # Whisper
     from intent.classifier import predict
     predict("what time is it")              # DistilBERT
+    from intent.nli_scorer import score
+    score("what time is it")                # the addressing gate, ~10s cold
     print("✅ Ready.")
 
 

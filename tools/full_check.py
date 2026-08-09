@@ -41,7 +41,7 @@ def section(title):
 
 
 from intent.dispatch import respond, REGISTRY                    # noqa: E402
-from intent.scorer import score, THRESHOLD                       # noqa: E402
+from intent.nli_scorer import score, THRESHOLD                   # noqa: E402
 from intent.normalize import normalize                           # noqa: E402
 from utils.context import Context                                 # noqa: E402
 from utils.history import ConversationHistory                     # noqa: E402
