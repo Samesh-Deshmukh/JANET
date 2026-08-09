@@ -62,9 +62,9 @@ THRESHOLD = 40
 MODEL_NAME = os.environ.get("JANET_NLI_MODEL",
                             "MoritzLaurer/deberta-v3-large-zeroshot-v2.0")
 
-# The measured operating point: p >= 0.31 is "addressed". Rescaled below so it
+# The measured operating point: p >= 0.20 is "addressed". Rescaled below so it
 # lands exactly on THRESHOLD, which is what lets the interface stay unchanged.
-NLI_CUT = float(os.environ.get("JANET_NLI_CUT", "0.31"))
+NLI_CUT = float(os.environ.get("JANET_NLI_CUT", "0.20"))
 
 # One turn is one Person+Assistant pair. Five is what the design asked for and
 # what the eval set was measured with.
@@ -149,12 +149,57 @@ def premise(query, history=None, max_turns=MAX_TURNS):
     return "\n".join(lines)
 
 
+def _owed_an_answer(history):
+    """Did JANET's own last reply ask the person something?
+
+    This is the ONLY condition under which the conversation is shown to the
+    model — see `probability` for the measurement that forced it.
+    """
+    if history is None:
+        return False
+    asked = getattr(history, "last_reply_was_question", None)
+    return bool(asked()) if callable(asked) else False
+
+
 def probability(query, history=None):
-    """P(this was aimed at JANET), in [0, 1]. Raises if the model is unusable."""
+    """P(this was aimed at JANET), in [0, 1]. Raises if the model is unusable.
+
+    THE CONVERSATION IS ONLY SHOWN WHEN JANET IS OWED AN ANSWER, and that is
+    the most surprising line in this file, so here is the measurement.
+
+    Put an `Assistant:` turn in the premise and the hypothesis "the last
+    speaker is talking to the voice assistant" becomes nearly entailed by
+    construction. The model stops judging the last line and starts noticing
+    that an assistant conversation is happening. Measured, same fixture:
+
+        utterance                                  alone   with context
+        "and tomorrow?"            (real)          0.036      0.762
+        "i like pizza"             (ambient)       0.125      0.731
+        "can you pass me the salt" (ambient)       0.107      0.723
+        "why are we going this way"(ambient)       0.065      0.672
+
+    Everything lands in 0.60-0.76 and the classes stop being separable — on the
+    labelled set, ambient speech spoken DURING an open conversation scored
+    0/16. `tools/full_check.py` caught it, because it does what a real room
+    does: talks over JANET seconds after it answered.
+
+    So context is spent only where it pays. When JANET's last reply ended in a
+    question we are OWED an answer, and "8 am every weekday" or "oh yeah" is
+    unreadable without it — that case goes from 3/8 to 8/8. Otherwise the
+    utterance is judged alone, which takes ambient-during-conversation to
+    15/16.
+
+    The follow-up case this appears to give up ("and tomorrow?" after a
+    STATEMENT) is not actually lost: it falls to `dispatch._rescue`, which asks
+    the full LLM and has the whole conversation. That path already existed, is
+    gated on JANET having spoken within 30s, and was built for exactly this.
+    A false negative there costs a second; a false positive has no safety net
+    at all.
+    """
     import torch
 
     c = _load()
-    text = premise(query, history)
+    text = premise(query, history if _owed_an_answer(history) else None)
     batch = c["tok"]([text, text], [HYPOTHESIS_YES, HYPOTHESIS_NO],
                      return_tensors="pt", truncation=True, max_length=256,
                      padding=True).to(c["device"])

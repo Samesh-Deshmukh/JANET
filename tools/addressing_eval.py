@@ -226,6 +226,55 @@ def run_baseline(rows):
     return m, scores
 
 
+def run_live(rows):
+    """Score every row through the REAL gate that ships, not a copy of it.
+
+    The benchmark path below builds its own premise and its own hypothesis pair
+    so it can compare checkpoints. That makes it a second implementation of the
+    thing being measured, and a second implementation is a thing that drifts.
+    This mode calls `intent.nli_scorer` directly, so the number printed here is
+    the number JANET actually behaves with.
+    """
+    from intent.nli_scorer import score, THRESHOLD, MODEL_NAME
+
+    class _FakeHistory:
+        """Just enough of ConversationHistory for the gate: messages()."""
+
+        def __init__(self, context):
+            self._context = context
+
+        def messages(self):
+            out = []
+            for user, janet in self._context:
+                out.append({"role": "user", "content": user})
+                out.append({"role": "assistant", "content": janet})
+            return out
+
+        def last_reply_was_question(self):
+            # The gate reads the conversation ONLY when this is true, so the
+            # fake has to answer it or --live measures a different thing.
+            return bool(self._context) and self._context[-1][1].strip().endswith("?")
+
+    print("\n" + "=" * 72)
+    print(f"LIVE — intent/nli_scorer.py as shipped ({MODEL_NAME})")
+    print("=" * 72)
+
+    predictions, latencies = [], []
+    for row in rows:
+        history = _FakeHistory(row.get("context") or [])
+        t0 = time.perf_counter()
+        total, _breakdown = score(row["utterance"], history)
+        latencies.append((time.perf_counter() - t0) * 1000)
+        predictions.append(total >= THRESHOLD)
+    m = report("as shipped", rows, predictions,
+               f"[{statistics.mean(latencies):.0f} ms mean]")
+    print("    " + "  ".join(f"{t} {ok}/{n}" for t, (ok, n)
+                             in sorted(per_tag(rows, predictions).items())))
+    for kind, row in failures(rows, predictions, limit=12):
+        print(f"      {kind:<15} {row['id']}  {row['utterance'][:64]!r}")
+    return m
+
+
 # --------------------------------------------------------------------------
 # Candidate: a Hugging Face NLI model used as a zero-shot addressing gate
 # --------------------------------------------------------------------------
@@ -434,6 +483,9 @@ def main():
     ap.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"])
     ap.add_argument("--hypothesis", default=None,
                     help="only test this hypothesis key")
+    ap.add_argument("--live", action="store_true",
+                    help="score with intent/nli_scorer.py as shipped, instead "
+                         "of benchmarking raw checkpoints")
     ap.add_argument("--fusion", action="store_true",
                     help="also compare ways of combining NLI with the heuristic")
     ap.add_argument("--extra-negatives", action="store_true",
@@ -452,6 +504,10 @@ def main():
 
     base_m, _ = run_baseline(rows)
     if args.baseline_only:
+        return 0
+
+    if args.live:
+        run_live(rows)
         return 0
 
     hypotheses = HYPOTHESES
