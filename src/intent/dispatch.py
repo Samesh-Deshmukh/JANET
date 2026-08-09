@@ -8,7 +8,7 @@ from actions import (
 )
 from intent.intent import classify, CONF_THRESHOLD
 from intent.normalize import normalize
-from intent.scorer import score, THRESHOLD
+from intent.nli_scorer import score, THRESHOLD
 from ai_core import addressing, responder
 from utils import confirm
 
@@ -52,11 +52,25 @@ def dispatch(intent, slots, ctx):
 # and "2nd-person" are NOT here: media is full of both.
 _STRONG_SIGNALS = {"janet", "keyword", "command"}
 
+# An NLI score this high needs no second opinion. Below it, a GENERAL
+# classification with no keyword evidence is thin enough to be worth verifying.
+_NLI_CONFIDENT = 60
+
 
 def _weakly_addressed(label, breakdown):
-    """Passed the gates, but with no evidence beyond being question-shaped."""
-    return (label == "GENERAL"
-            and not ({name for name, _ in breakdown} & _STRONG_SIGNALS))
+    """Passed the gates, but on thin evidence.
+
+    The old test was "GENERAL, and nothing but question-shape". The gate now
+    leads with a model, so the equivalent test becomes: GENERAL, no keyword
+    evidence at all, AND the model was only lukewarm. A confident NLI score is
+    exactly the judgement this check wanted in the first place, so paying for a
+    second model call on top of it would be buying the same opinion twice.
+    """
+    if label != "GENERAL":
+        return False
+    if {name for name, _ in breakdown} & _STRONG_SIGNALS:
+        return False
+    return dict(breakdown).get("nli", 0) < _NLI_CONFIDENT
 
 
 def _rescue(raw_query, ling, ctx, why, label=None, slots=None):
@@ -123,14 +137,17 @@ def respond(query, ctx):
     layer — a bare "yes" has no linguistic signal and would be thrown away as
     ambient speech.
 
-    Then Layer 1 (the cheap scorer) runs, and only if the utterance is
+    Then Layer 1 (the NLI addressing gate) runs, and only if the utterance is
     plausibly addressed do we pay for Layer 2: the classifier must return a
-    real intent it's sure of, AND the confidence-boosted linguistic score must
-    clear the threshold. Either veto => None (silent).
+    real intent it's sure of, AND the confidence-boosted score must clear the
+    threshold. Either veto => None (silent).
+
+    Layer 1 is no longer cheap — it is a model — but it is the only layer that
+    reads the conversation, which is what a follow-up depends on.
     """
-    # Normalize once so both layers see the clean form the dataset used
-    # ("What's the time?" -> "whats the time"); Whisper's caps/punctuation would
-    # otherwise make the scorer miss every signal and skew the classifier.
+    # Normalize once so the CLASSIFIER sees the clean form its dataset used
+    # ("What's the time?" -> "whats the time"). The gate no longer wants this:
+    # it reads raw text, where casing and question marks are signal.
     # The RAW form is kept for the responder: the LLM speaks better from natural
     # text than from the stripped, lowercased form the two gates need.
     raw_query = query
@@ -160,11 +177,16 @@ def respond(query, ctx):
             "They said your name but haven't asked for anything yet.",
             ctx.history, ctx.speak)
 
-    # Layer 1 (cheap) runs first. If the linguistic score is so low that even a
-    # maxed-out confidence bonus couldn't reach the threshold, it can't be
-    # rescued -- so we stay silent WITHOUT paying for the classifier. This skips
-    # the model on the low-signal ambient chatter that fills a room.
-    ling, breakdown = score(query)
+    # Layer 1 runs first. If its score is so low that even a maxed-out
+    # confidence bonus couldn't reach the threshold, it can't be rescued -- so
+    # we stay silent WITHOUT paying for the classifier.
+    #
+    # RAW text, not the normalized form: the gate is a language model now, and
+    # casing and question marks are signal to it. `query` (normalized) is still
+    # what the classifier sees, because that is what it trained on. The history
+    # goes in too — an NLI model judging "and tomorrow?" needs the turn before
+    # it, and that is the entire reason this layer stopped being a word list.
+    ling, breakdown = score(raw_query, ctx.history)
     detail = ", ".join(f"{name} +{pts}" for name, pts in breakdown) or "no signals"
     if ling < THRESHOLD - CONF_BONUS_SCALE:
         return _rescue(raw_query, ling, ctx, f"Score: {ling} ({detail})")
