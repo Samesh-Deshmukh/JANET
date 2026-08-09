@@ -42,21 +42,30 @@ which parts apply to you now than after a 4 GB download.
 | **Python** | **3.11** | What every pin in `requirements.txt` is tested against. 3.12/3.13 may work; you're on your own for wheel availability. |
 | **Microphone** | Required | JANET is always-listening. There is no text-only mode. |
 | **Speakers** | Required | Every reply is spoken; nothing is printed *instead*. |
-| **Disk** | **~10 GB** | The virtualenv alone is ~7.9 GB, and the CUDA PyTorch wheel is most of that — a **CPU or macOS build is far smaller**, closer to 3 GB total. Plus ~1.5 GB of models, plus your LLM. |
+| **Disk** | **~10 GB** | The virtualenv alone is ~7.9 GB, and the CUDA PyTorch wheel is most of that — a **CPU or macOS build is far smaller**, closer to 3 GB total. Plus ~3.2 GB of models (the addressing gate is ~1.7 GB of that), plus your LLM. |
 | **RAM** | 8 GB+ | 16 GB if you want a comfortable LLM alongside. |
 | **GPU** | Strongly recommended | Not required for JANET itself — see below. |
 | **Internet** | First run only | To download the model weights. After that JANET runs fully offline. |
 
 ### About the GPU
 
-JANET has three models, and only one of them really cares:
+JANET has four models, and only one of them really cares:
 
 | Model | On CPU | On GPU |
 |---|---|---|
 | Silero VAD | fine (it's 2 MB) | fine |
 | Whisper `small` | usable, a few seconds per utterance — drop to `tiny` if it drags | ~0.1 s |
 | DistilBERT intent | fine (~0 s per utterance either way) | fine |
+| NLI addressing gate | usable (a fraction of a second per utterance) | ~0.01 s, 848 MB VRAM |
 | **The LLM (JANET's voice)** | **painful — expect 30 s+ per reply** | 1–3 s |
+
+**The addressing gate downloads ~1.7 GB on first run.** It is
+`MoritzLaurer/deberta-v3-large-zeroshot-v2.0`, pulled from Hugging Face and
+cached in `~/.cache/huggingface`. It needs no extra pip package — the
+checkpoint ships a fast tokenizer, so **`sentencepiece` is not required**. If
+VRAM is tight, put `JANET_NLI_MODEL=MoritzLaurer/deberta-v3-base-zeroshot-v2.0`
+in your `.env`: 379 MB instead of 848 MB, and measurably worse at telling your
+own conversation apart from a request.
 
 So: **no GPU means you should use a much smaller LLM** (a 3B, not a 14B), or
 accept that JANET pauses for a long time before every sentence. Everything else

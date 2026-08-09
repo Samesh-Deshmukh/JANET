@@ -156,7 +156,8 @@ thinks or talks — see [Staying responsive](#staying-responsive).
 
 Nothing is spoken unless **both** gates agree the utterance is a real request *to JANET*:
 
-1. **Scorer** (`intent/scorer.py`) — "Was this addressed to me?" Scores linguistic signals (question/command shape, "janet", keywords…) against a threshold. Cheap, runs first.
+1. **Addressing gate** (`intent/nli_scorer.py`) — "Was this addressed to me?" A zero-shot **NLI model** (`deberta-v3-large-zeroshot-v2.0`, ~10ms) decides whether the utterance entails *"the last speaker is talking to the voice assistant"* or *"…to another person"*. It replaced a keyword heuristic (still in `intent/scorer.py`, now only a strong-signal rescue and the eval baseline) because whether a sentence was meant for JANET is often **not a property of the sentence**: "did you email sarah back about the invoice" scored 65 on keywords and got answered, while "and tomorrow?" scored 0. Measured on 248 labelled utterances, precision went **48.6% → 66.7%**, and two people talking to each other went **6/18 → 18/18**.
+   It reads the conversation only when JANET's own last reply ended in a **question**. Showing it every time made an `Assistant:` turn in the premise nearly entail the answer by itself, and ambient speech spoken *during* a conversation scored 0/16; follow-ups after a statement are caught by the LLM rescue instead.
 2. **Classifier** (`intent/classifier.py`) — "What do they want?" A fine-tuned DistilBERT (13 intents, ~97% val accuracy). Also vetoes anything it reads as `NONE` (not a real intent) or is unsure about.
 
 If either gate says no, JANET stays silent — which matters a lot for an always-listening mic.
@@ -206,7 +207,7 @@ makes it sound needy.
 
 The one thing that jumps the queue is an answer to a pending confirmation (see
 [Asking before acting](#asking-before-acting)) — a bare "yes" carries no linguistic
-signal at all, so the scorer would discard it as background chatter.
+signal at all, so the gate would discard it as background chatter.
 
 ## Current capabilities
 
@@ -584,7 +585,8 @@ src/
                      sandbox (bubblewrap) · workspace (confined files) · host (read-only allowlist)
                      selfmod (JANET editing its own code, reviewed)
                      addressing (rescues follow-ups) · transcript
-  intent/            normalize · scorer (Layer 1) · classifier + train/dataset (Layer 2) · dispatch
+  intent/            normalize · nli_scorer (Layer 1, NLI addressing gate) · scorer (keyword rescue)
+                     classifier + train/dataset (Layer 2) · dispatch
                      parsers: timeparse (alarms) · timerparse · remindparse · dateparse · eventparse · numwords
   actions/           one handler per intent (time, date, timer, alarm, reminder, calc,
                      calendar, weather, smart_home, email, system, general)
@@ -616,4 +618,4 @@ lists exactly what's absent and what to do about each.
 
 ## Target stack
 
-Whisper (STT, `small`, English-forced and vocabulary-primed) · Silero VAD · DistilBERT intent classifier · a multi-signal addressing scorer · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
+Whisper (STT, `small`, English-forced and vocabulary-primed) · Silero VAD · DistilBERT intent classifier · a zero-shot NLI addressing gate (DeBERTa-v3-large) · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
