@@ -41,3 +41,4 @@ data/debug_audio/
 
 # Saved alarms, timers and reminders — your schedule, and machine-local state
 data/state/
+src2/
