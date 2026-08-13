@@ -142,6 +142,13 @@ def to_event(item):
         location=item.get("location") or "",
         # Google's own id, needed to delete this occurrence later.
         uid=item.get("id") or "",
+        description=item.get("description") or "",
+        # `recurrence` and `reminder_minutes` are deliberately NOT read back.
+        # events_between asks for singleEvents=True, so what comes back is an
+        # expanded OCCURRENCE, which carries no RRULE of its own — populating
+        # the field from a list response would always leave it empty and imply
+        # "this event does not repeat" about events that do. They are
+        # write-only fields as far as this adapter is concerned.
     )
 
 
@@ -195,6 +202,20 @@ def to_insert_body(event, time_zone=None):
             body["end"]["timeZone"] = zone
     if event.location:
         body["location"] = event.location
+    if event.description:
+        body["description"] = event.description
+    if event.recurrence:
+        # Google wants a JSON array of iCalendar lines; we hold a tuple so the
+        # dataclass default is immutable. list() is the whole conversion.
+        body["recurrence"] = list(event.recurrence)
+    if event.reminder_minutes is not None:
+        # `is not None`, not truthiness: 0 is a legitimate value meaning "notify
+        # me exactly at the start", and `if event.reminder_minutes:` would drop
+        # it. useDefault must be False or Google ignores the overrides entirely.
+        body["reminders"] = {
+            "useDefault": False,
+            "overrides": [{"method": "popup", "minutes": event.reminder_minutes}],
+        }
     return body
 
 

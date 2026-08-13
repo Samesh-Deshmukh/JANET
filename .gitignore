@@ -42,3 +42,8 @@ data/debug_audio/
 # Saved alarms, timers and reminders — your schedule, and machine-local state
 data/state/
 src2/
+
+# One-off scripts holding real personal data (a school timetable, an address
+# book). The rest of tools/ is tracked and pushed, so anything with your
+# teachers' names or your employer in it belongs here instead.
+tools/private/

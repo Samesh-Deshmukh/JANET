@@ -458,6 +458,14 @@ and it's how the whole thing is tested.
 | **Smart home** | Home Assistant over your own LAN | `JANET_SMART_HOME=demo` |
 | **Email** | IMAP (read) + SMTP (reply) | `JANET_EMAIL=demo` |
 
+The shared `Event` type carries an optional `recurrence` (raw iCalendar `RRULE`
+lines), `description` and `reminder_minutes`, so a calendar entry can repeat
+weekly and notify you ahead of time. `reminder_minutes` is deliberately
+`int | None`: `None` means "leave the calendar's own defaults alone", which is a
+different request from `0`, "notify me exactly at the start". Voice commands
+still only create one-off events — nothing spoken should be able to write a rule
+that repeats for a year — but the field is there for scripted bulk imports.
+
 Copy [`.env.example`](.env.example) to `.env` and fill in only what you use. Try it
 with no setup at all:
 

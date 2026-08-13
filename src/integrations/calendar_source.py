@@ -17,6 +17,22 @@ class Event:
     # identifies it to the server. Empty for the in-memory sources, which can
     # match on the fields themselves.
     uid: str = ""
+    # Free-text body of the event, below the title. Spoken answers never read
+    # this out — it is for detail a title shouldn't carry (a teacher's name, a
+    # class code, a meeting link).
+    description: str = ""
+    # iCalendar recurrence lines, e.g.
+    #   ("RRULE:FREQ=WEEKLY;BYDAY=MO;UNTIL=20270630T235959Z",)
+    # A TUPLE, not a list: a dataclass field cannot have a mutable default,
+    # because every Event built without one would share the same list object.
+    # Empty means a one-off event, which is what everything else in JANET makes.
+    recurrence: tuple[str, ...] = ()
+    # Minutes before the start to be notified. None means "say nothing about
+    # reminders and let the calendar's own defaults apply" — which is NOT the
+    # same as 0, a real request to be notified exactly at the start time. A
+    # plain `int = 0` default would silently override the user's calendar
+    # settings on every event JANET has ever created.
+    reminder_minutes: int | None = None
 
 
 class CalendarSource(Protocol):
