@@ -13,7 +13,17 @@ build/
 *.log
 .env
 data/cache/
-data/models/
+
+data/models/*
+!data/models/intent-distilbert/
+data/models/intent-distilbert/_checkpoints/
+# The weights themselves are a GitHub Release asset, not a git object: 256 MB is
+# past GitHub's 100 MB file limit, and LFS gives only ~4 clones/month of free
+# bandwidth. intent/classifier.py downloads this on first run. Everything else
+# in the directory (config, tokenizer — 783 KB) IS committed, so a clone has
+# everything but the one big tensor file.
+data/models/intent-distilbert/model.safetensors
+
 *.wav
 *.mp3
 *.mp4

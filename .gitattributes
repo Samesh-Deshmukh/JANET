@@ -4,17 +4,21 @@
 # `text=auto` -> git decides which files are text and normalizes them.
 # `eol=lf`     -> text files are stored AND checked out with LF everywhere.
 * text=auto eol=lf
-
 # Be explicit for the file types we actually ship.
 *.py    text eol=lf
 *.md    text eol=lf
 *.txt   text eol=lf
 *.cfg   text eol=lf
 *.toml  text eol=lf
-
 # Audio/binary assets must never be line-ending normalized.
 *.wav   binary
 *.mp3   binary
 *.mp4   binary
 *.png   binary
 *.jpg   binary
+# The trained classifier's small files (config, tokenizer) are committed
+# normally. Its 256 MB model.safetensors is NOT in git at all — it's a GitHub
+# Release asset that intent/classifier.py downloads on first run. Git LFS was
+# tried and rejected: 1 GB/month of free bandwidth against 256 MB per clone is
+# about four clones. Release assets have no bandwidth cap on public repos.
+*.safetensors binary

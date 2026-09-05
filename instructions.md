@@ -4,9 +4,9 @@ A step-by-step setup guide for a **fresh clone on a machine that isn't the
 author's**. If you just want to know what JANET *is*, read
 [README.md](README.md) first — this file assumes you've decided to run it.
 
-Follow the steps in order. Step 5 (**training the intent classifier**) is not
-optional: the trained model is gitignored, so your clone doesn't have one and
-JANET won't start without it.
+Follow the steps in order. You don't have to train anything: the intent
+classifier's config and tokenizer are committed, and JANET downloads its 256 MB
+weights file automatically the first time it starts. Step 5 explains it.
 
 ---
 
@@ -16,7 +16,7 @@ JANET won't start without it.
 2. [Install the system packages](#2-install-the-system-packages)
 3. [Clone the repo](#3-clone-the-repo)
 4. [Create the virtualenv and install Python packages](#4-create-the-virtualenv-and-install-python-packages)
-5. [Train the intent classifier (required)](#5-train-the-intent-classifier-required)
+5. [The intent classifier (downloads itself)](#5-the-intent-classifier-downloads-itself)
 6. [Run a local LLM — JANET's voice](#6-run-a-local-llm--janets-voice)
 7. [Configure `.env` (optional)](#7-configure-env-optional)
 8. [First run](#8-first-run)
@@ -303,24 +303,64 @@ Everything in JANET works on a CPU build. Only speed changes.
 
 ### What you just installed
 
-A few entries in `requirements.txt` deserve a note, because they'll look odd:
+`requirements.txt` was audited against every `import` in `src/` and `tools/` on
+2026-09-05, and the fourteen packages nothing imported were removed — the file's
+closing comment block lists each one and why. Two entries still deserve a note,
+because they look wrong in opposite directions:
 
-- **`keyboard`, `pynput`, `evdev`** — legacy push-to-talk, dormant since JANET
-  became always-listening. Nothing imports them. Safe to remove if you like.
-- **`opencv-python`, `pyFirmata`, `pyserial`** — placeholders for the vision and
-  hardware work in the long-term design. `src/vision/` is empty today.
-- **`pyttsx3`** — superseded by the direct `espeak-ng` call in `audio/tts.py`.
+- **`matplotlib`** — looks unused; isn't. No file imports it, but scikit-learn's
+  `ConfusionMatrixDisplay` (used at the end of `intent/train.py`) *draws* through
+  matplotlib while only declaring it an optional extra. Drop it and training
+  crashes on `savefig()` after the fine-tune has already run.
+- **`evdev`** — looks used; barely is. `utils/hotkey.py` imports it, but that file
+  has been dormant since JANET became always-listening and nothing imports *it*.
+  It's pinned so the file still loads. Delete both together if you want it gone.
 
-They're pinned so the install is reproducible, not because the running assistant
-needs them.
+- **`opencv-python`** — the one forward-looking pin kept on purpose: vision is
+  being tested right now. `src/vision/` is still empty, so expect `cv2` imports
+  to land there shortly.
 
 ---
 
-## 5. Train the intent classifier (required)
+## 5. The intent classifier (downloads itself)
 
-**JANET will not start without this.** The trained model lives in
-`data/models/`, which is gitignored — so it isn't in your clone, and you have to
-produce it yourself. The training data *is* committed, so this is one command:
+**You do not need to train anything.** The model's config and tokenizer are
+committed, and its 256 MB `model.safetensors` is a
+[release asset](https://github.com/Samesh-Deshmukh/JANET/releases/tag/intent-model-v1)
+that JANET fetches automatically the first time the classifier loads. You'll see
+a progress bar once, and never again.
+
+Why not just commit the weights? They're past GitHub's 100 MB per-file limit.
+Git LFS can hold them, but its free tier allows about four clones a month before
+everyone's `git clone` starts failing — release assets have no bandwidth cap on
+a public repo.
+
+Trigger the download now rather than mid-conversation:
+
+```bash
+cd src
+python -c "from intent.classifier import predict; print(predict('what time is it'))"
+```
+
+`('TIME', 0.91...)` means you're done — skip to
+[§6](#6-run-a-local-llm--janets-voice).
+
+Useful switches:
+
+| Variable | Effect |
+|---|---|
+| `JANET_NO_DOWNLOAD=1` | never fetch; fail with "train it instead". For strictly offline installs. |
+| `JANET_INTENT_MODEL_URL=…` | fetch from your own mirror or fork instead. |
+
+The download is verified against a SHA-256 and written atomically, so an
+interrupted transfer can't leave a half-file that fails mysteriously later. And
+it only ever runs when `model.safetensors` is **missing** — if you train your
+own, it is never overwritten.
+
+### Retraining it yourself (optional)
+
+The full labelled dataset is committed too, so you can rebuild the model from
+scratch — worth doing if you [add your own phrasings](#optional-teach-it-your-own-phrasings):
 
 ```bash
 cd src
@@ -330,7 +370,7 @@ python -m intent.train
 This downloads `distilbert-base-uncased` (~268 MB, cached in
 `~/.cache/huggingface`), fine-tunes it on the labelled dataset in
 `data/text/{train,val}/`, prints per-class metrics and a confusion matrix, and
-saves the result to `data/models/intent-distilbert/`.
+**overwrites** `data/models/intent-distilbert/`.
 
 **What to expect** — measured on this repo, on an RTX 5060 Ti:
 
@@ -367,15 +407,19 @@ python data/text/validate.py     # from the repo root
 Enforces the format contract: one utterance per line, the filename is the label,
 `#` comments and blank lines ignored.
 
-### Optional: reclaim 767 MB afterwards
+### Optional: reclaim 767 MB after retraining
 
-Training leaves per-epoch checkpoints behind. The saved model doesn't need them:
+Only relevant if you ran the training command above — a fresh clone never has
+these. Training leaves per-epoch checkpoints behind, and the saved model doesn't
+need them: 256 MB of that is a byte-identical copy of `model.safetensors`, and
+the other 511 MB is optimizer state whose only use is resuming an interrupted
+run. They're gitignored for exactly this reason.
 
 ```bash
 rm -rf data/models/intent-distilbert/_checkpoints
 ```
 
-That takes the directory from ~1 GB down to ~268 MB.
+That takes the directory from ~1 GB back down to ~257 MB.
 
 ### Optional: teach it your own phrasings
 
@@ -424,6 +468,15 @@ llama-server -m /path/to/qwen3-14b-instruct-q4_k_m.gguf -ngl 999 -c 8192 --port 
 flag here — it works for **Metal on Apple Silicon** exactly as it does for CUDA.
 This is JANET's **default** backend — `http://127.0.0.1:8081/v1` — so no `.env`
 entry is needed if you use it.
+
+> **Getting your GPU back.** A server holding a 14B model sits on ~10 GB until
+> you stop it, which is a problem the day you want to play something.
+> `tools/janet-gpu.sh status|start|stop|restart` handles that, and it stops the
+> **systemd user unit** rather than the process — if you run llama-server under
+> one with `Restart=always`, killing the PID just brings it back in five seconds
+> looking exactly like VRAM that never freed. Set `JANET_LLM_UNIT` if your unit
+> isn't named `llama-qwen.service`; the script also flags the classic
+> two-servers-on-one-model case that quietly halves your speed.
 
 ### Which model for your hardware
 
@@ -592,7 +645,8 @@ something you can't find, this is why.
 
 | Path | What it was | What you do |
 |---|---|---|
-| `data/models/` | the trained DistilBERT classifier | **Train it** — [§5](#5-train-the-intent-classifier-required). JANET won't start without it. |
+| `data/models/intent-distilbert/model.safetensors` | the 256 MB trained weights | **Nothing — JANET downloads it on first run** from a [release asset](https://github.com/Samesh-Deshmukh/JANET/releases/tag/intent-model-v1) ([§5](#5-the-intent-classifier-downloads-itself)). The directory's config and tokenizer *are* committed, so only this one file is fetched. |
+| `data/models/` (anything else) | other trained models, and `intent-distilbert/_checkpoints/` | Machine-local. Checkpoints are 767 MB of resumable optimizer state, regenerated by training. |
 | `~/.cache/whisper` | Whisper weights | Downloaded automatically on first run. |
 | `.env` | real credentials | `cp .env.example .env`. Optional. |
 | `data/state/` | saved alarms, timers, reminders | Created at runtime. Yours will be empty. |
@@ -604,9 +658,11 @@ something you can't find, this is why.
 | `tests/` | scratch space, **not** a test suite | Use `tools/smoke.py` and `tools/full_check.py` instead — those are committed. |
 | `venv/` | the virtualenv | You create it in [§4](#4-create-the-virtualenv-and-install-python-packages). |
 
-**What you *do* get** is everything needed to build the rest: all of `src/`, the
-full labelled training dataset in `data/text/`, both check suites in `tools/`,
-`requirements.txt`, and `.env.example` with every setting documented inline.
+**What you *do* get** is everything needed to run and to build the rest: all of
+`src/`, the intent classifier's config and tokenizer (its weights arrive on
+first run), the full labelled training dataset in `data/text/`, both check
+suites in `tools/`, `requirements.txt`, and `.env.example` with every setting
+documented inline.
 
 ---
 
@@ -616,7 +672,9 @@ full labelled training dataset in `data/text/`, both check suites in `tools/`,
 
 | Error | Cause | Fix |
 |---|---|---|
-| `FileNotFoundError: intent model not found at .../intent-distilbert` | You skipped step 5 | `cd src && python -m intent.train` |
+| `FileNotFoundError: intent model not found at .../intent-distilbert` | The model's `config.json` is missing — an incomplete clone | Re-clone, or build it with `cd src && python -m intent.train` |
+| `RuntimeError: could not download the intent model` | No internet on first run, or the release URL is unreachable | Connect and re-run — it resumes from scratch safely. Offline? Train it instead: `cd src && python -m intent.train` |
+| `RuntimeError: the downloaded intent model failed its checksum` | The transfer was truncated or corrupted | Just re-run. The bad file is deleted automatically, never left behind. |
 | `ModuleNotFoundError: No module named 'audio'` | Run from the wrong directory | `cd src` first — see [§8](#8-first-run) |
 | `OSError: [Errno -9996] Invalid input device` | No microphone that PortAudio can see | Check `pactl list sources short`; unplug/replug; confirm you're **not** root |
 | `ImportError: libportaudio.so.2` | PortAudio missing at the system level | Install it — [§2](#2-install-the-system-packages) |
@@ -690,7 +748,7 @@ your own common phrasings to `INITIAL_PROMPT` there helps further.
 
 | Symptom | Likely cause |
 |---|---|
-| Long pause before *every* reply | The LLM. Check `nvidia-smi` for two processes holding the same model, then check the server is up at all. |
+| Long pause before *every* reply | The LLM. Run `tools/janet-gpu.sh status` — it prints what's holding the card and flags the usual culprit: two servers loaded with the same model, which pushes one of them onto the CPU. |
 | Slow only on the first utterance | Normal — models load at startup, but a cold page cache still costs the first run. |
 | Slow *speaking*, not thinking | espeak-ng playback is ~8.5 s for a typical answer. That's the biggest single cost in the pipeline. |
 | Deliberate ~11–20 s pauses | You enabled `JANET_DEEP_THINKING=1`. |

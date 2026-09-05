@@ -76,9 +76,14 @@ gate, and the agent layer.
 
 **[instructions.md](instructions.md)** is the full setup guide — system packages
 for every major distro plus macOS/Windows, the CUDA-vs-CPU split in
-`requirements.txt`, training the intent classifier (**required** — the trained
-model is gitignored, so it isn't in your clone), picking an LLM for your
-hardware, and a troubleshooting section.
+`requirements.txt`, picking an LLM for your hardware, and a troubleshooting
+section.
+
+**There's nothing to train before your first run.** The intent classifier's
+config and tokenizer are committed, and its 256 MB weights download
+automatically the first time JANET starts (a
+[release asset](https://github.com/Samesh-Deshmukh/JANET/releases/tag/intent-model-v1)
+— too big for git, and Git LFS's free tier would allow only ~4 clones a month).
 
 The 60-second version, for the impatient:
 
@@ -86,8 +91,7 @@ The 60-second version, for the impatient:
 git clone https://github.com/Samesh-Deshmukh/JANET.git && cd JANET
 python3.11 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-cd src && python -m intent.train    # ~16s on a GPU — you MUST do this
-python main.py                      # then just talk
+cd src && python main.py            # then just talk
 ```
 
 A microphone, a speaker, and ~10 GB of disk.
@@ -120,7 +124,7 @@ A microphone, a speaker, and ~10 GB of disk.
 **Maintaining it**
 | | |
 |---|---|
-| [Training the intent classifier](#training-the-intent-classifier) | Required for a fresh clone |
+| [Training the intent classifier](#training-the-intent-classifier) | Optional — a clone downloads the trained one |
 | [Principles](#principles) · [Target stack](#target-stack) | The rules the code is held to |
 
 ## How it works
@@ -571,9 +575,14 @@ Those are the same suites from [Checking it still works](#checking-it-still-work
 
 ## Training the intent classifier
 
-**A fresh clone has no trained model** — `data/models/` is gitignored, so this is
-a required setup step, not an optional one. JANET won't start without it (it
-fails with a message telling you to run exactly this):
+**A fresh clone doesn't need to train anything.** The config and tokenizer are
+committed; the 256 MB weights download on first use from a release asset, with a
+progress bar, verified against a SHA-256 and written atomically. Set
+`JANET_NO_DOWNLOAD=1` to refuse that and train locally instead.
+
+Retraining is therefore optional, and worth doing once you've added your own
+phrasings to the dataset (your own weights are never overwritten by the
+downloader):
 
 ```bash
 cd src && python -m intent.train
@@ -612,13 +621,15 @@ src/
   utils/             context, conversation memory (history.py), confirm gate, helpers
 data/
   text/              intent dataset (train/val), labels.txt, validate.py
-  models/            trained model — GITIGNORED, you train it (instructions.md §5)
+  models/            intent-distilbert/ — config + tokenizer committed; the
+                     256 MB weights download on first run (release asset)
   state/             saved alarms/timers/reminders (gitignored, made at runtime)
   transcripts/       per-day JSONL of every turn (gitignored)
 tools/
   smoke.py           30 checks over the real pipeline — the fast gate
   full_check.py      69 checks — every intent, gate and guard
   smart_home_check.py  20 checks on SMART_HOME alone (demo backend, no bulbs)
+  janet-gpu.sh       status/start/stop the LLM holding your VRAM (systemd user unit)
 instructions.md      full setup guide
 .env.example         every setting, documented inline
 ```
