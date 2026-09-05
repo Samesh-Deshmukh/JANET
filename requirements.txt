@@ -11,10 +11,27 @@ openai-whisper==20250625
 silero-vad==5.1.2        # LSTM voice-activity detection; model caches locally after first run
 
 # --- Audio I/O ---
-# Capture is PyAudio and nothing else. Text-to-speech has no Python package:
-# audio/tts.py shells out to the espeak-ng and paplay SYSTEM binaries, which
-# are installed by your package manager, not by pip.
+# Capture is PyAudio and nothing else.
 PyAudio==0.2.14
+
+# --- Text-to-speech (Piper, local neural TTS) ---
+# Replaced espeak-ng as JANET's voice. Cheap to add here: its only heavy
+# dependency, onnxruntime, is ALREADY installed as a dependency of silero-vad
+# above, so this pulls in just piper-tts + pathvalidate (~1 MB of wheels).
+#
+# The wheel is self-contained — it bundles its own espeak-ng data for
+# phonemisation, so there is no system package to install for Piper itself.
+# GPL-3.0, which matches JANET's own licence.
+#
+# Voice models are NOT pip-installed and NOT in this repo: audio/tts.py
+# downloads the ~63 MB .onnx to ~/.local/share/piper-voices on first run, the
+# same way Whisper and the NLI gate fetch theirs. JANET_NO_DOWNLOAD=1 is
+# honoured for offline installs.
+#
+# `paplay` (PipeWire) is still a SYSTEM binary and still required — it is what
+# plays the audio. `espeak-ng` is also still a system binary, but is now only
+# the fallback voice, used when the Piper model can't be loaded.
+piper-tts==1.8.0
 
 # --- Push-to-talk (dormant) ---
 # utils/hotkey.py has imported evdev since before Block 2 made JANET
@@ -67,14 +84,15 @@ requests==2.33.0
 # relying on another package to keep pulling it in is how installs break later.
 sympy==1.14.0
 
-# --- Removed, and why (so nobody re-adds them by reflex) ---
+# --- Removed ---
 # Audited 2026-09-05 against every `import` in src/ and tools/. The rule used:
 # pin what JANET imports, plus what a dependency needs but will not install for
 # itself (matplotlib, accelerate). Everything below was neither.
 #
 #   keyboard, pynput  - legacy push-to-talk, zero imports since Block 2. (evdev
 #                       stayed only because utils/hotkey.py still imports it.)
-#   pyttsx3           - superseded by the direct espeak-ng call in audio/tts.py.
+#   pyttsx3           - superseded by audio/tts.py, which now calls Piper
+#                       directly (and espeak-ng only as a fallback).
 #   sounddevice,      - never imported; PyAudio does capture and audio stays in
 #   wavio               memory as a NumPy array rather than going via a wav file.
 #   pandas            - never imported; intent/dataset.py reads plain text files.

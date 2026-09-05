@@ -6,6 +6,9 @@ play — against 0.10s for Whisper and ~2s for the language model. Speaking is b
 far the longest thing JANET does, and until now the whole program sat inside it:
 the microphone was deaf for the entire 8.5s.
 
+(Synthesis is not what costs that. Piper renders a sentence 12-50x faster than
+it plays — the 8.5s is the speaking itself, and no synthesiser can shorten it.)
+
 This module owns one worker thread and a queue. `speak()` returns immediately.
 
 **Everything that talks goes through here**, which fixes a second bug for free.

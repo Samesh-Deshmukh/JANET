@@ -10,7 +10,7 @@ microphone keeps running while JANET works:
 
     [capture thread]  frames -> ring + VAD -> utterance -> _utterances queue
     [main thread]     utterance -> Whisper -> respond() -> speaker.speak()
-    [speech thread]   audio/speaker.py -> espeak -> paplay
+    [speech thread]   audio/speaker.py -> piper -> paplay
 
 Why it mattered, measured on this machine: Whisper takes 0.10s and the language
 model ~2s, but **playing a typical answer takes 8.5 seconds** — and the old
@@ -91,12 +91,18 @@ def _save_debug_audio(audio, transcript):
 def _preload():
     """Load every model before the first utterance instead of during it.
 
-    Measured: Whisper 2.0s + DistilBERT 1.6s + Silero 0.05s + the NLI
-    addressing gate ~10s. Loaded lazily, all of that landed on the first thing
-    you said after starting JANET, which is exactly when it feels broken. Paid
-    at startup it costs nothing — you aren't talking yet. The NLI model is by
-    far the biggest of the four now, so this function earns its keep more than
-    it used to.
+    Measured: Whisper 2.0s + DistilBERT 1.6s + Silero 0.05s + Piper 0.6s + the
+    NLI addressing gate ~10s. Loaded lazily, all of that landed on the first
+    thing you said after starting JANET, which is exactly when it feels broken.
+    Paid at startup it costs nothing — you aren't talking yet. The NLI model is
+    by far the biggest of the five now, so this function earns its keep more
+    than it used to.
+
+    Piper is warmed here too, and it is the one whose absence you would *hear*
+    rather than wait through: loaded lazily, the voice model would be read from
+    disk inside the first `say()`, delaying the start of JANET's first reply.
+    Failure is swallowed on purpose — a missing voice must not stop JANET
+    booting, because `tts.say` already falls back to espeak-ng at speak time.
     """
     print("⏳ Warming up models...")
     SpeechDetector()                        # Silero, cached in a module singleton
@@ -106,6 +112,12 @@ def _preload():
     predict("what time is it")              # DistilBERT
     from intent.nli_scorer import score
     score("what time is it")                # the addressing gate, ~10s cold
+    from audio import tts
+    if tts.ENGINE != "espeak":
+        try:
+            tts._get_voice()                # Piper, ~0.6s
+        except Exception as exc:
+            print(f"⚠  Piper voice not ready ({exc}); will use espeak-ng.")
     print("✅ Ready.")
 
 

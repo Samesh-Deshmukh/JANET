@@ -65,8 +65,7 @@ Being straight about scope: this is a **working prototype and a learning
 project**, not a product. It has no installer, no GUI, and no packaging. It's
 developed on Linux (WSL2 works; macOS and Windows need [two short files
 ported](instructions.md#13-macos-windows-and-everything-else)). It wants a GPU
-and about 10 GB of disk. Text-to-speech is still espeak-ng, which sounds like
-1995 — Piper is the next job.
+and about 10 GB of disk.
 
 What *is* done: the full audio pipeline, both intent gates, all twelve intent
 handlers, four integrations with fake backends, persistence, the confirmation
@@ -140,7 +139,8 @@ In plain terms, one sentence at a time:
    calendar, switches the light — and returns plain **facts**, not a sentence.
 5. A **local language model** turns those facts, plus the conversation so far,
    into what you actually hear.
-6. **espeak-ng** speaks it.
+6. **Piper** speaks it — a local neural voice, streamed to the speakers as it's
+   synthesised so sound starts on the first sentence rather than the last.
 
 The whole path, with the file that owns each stage:
 
@@ -418,6 +418,12 @@ Speaking isn't a detail at the end of the pipeline — it's about 80% of it. And
 JANET used to sit inside it with the microphone stopped, so anything you said
 while it was talking was never even recorded.
 
+Worth being precise about *which* part is slow, because it's the part no
+software can fix: that 8.54s is the **playback**, not the synthesis. Piper
+renders a sentence in 0.11s — 12–50× faster than it takes to say out loud. So
+switching from espeak-ng to a neural voice cost essentially nothing, and no
+faster synthesiser would move this number.
+
 Capture, thinking and speaking now run on separate threads. The mic keeps
 running throughout, models load at startup instead of during your first sentence
 (3.6s that used to land exactly when JANET felt broken), and everything that
@@ -432,6 +438,36 @@ If you want barge-in, load the echo canceller and tell JANET the mic is safe:
 pactl load-module module-echo-cancel   # not persistent across reboots
 JANET_BARGE_IN=1 python main.py
 ```
+
+## The voice
+
+JANET speaks with **Piper**, a local neural synthesiser — no cloud, no account,
+no API key. The default voice is `en_US-amy-medium`, chosen by ear against five
+other candidates. The ~63 MB model downloads once on first run to
+`~/.local/share/piper-voices` (`JANET_NO_DOWNLOAD=1` refuses, as with the intent
+classifier); after that nothing touches the network.
+
+Everything about it is a setting, and none of them are required:
+
+```bash
+JANET_PIPER_VOICE=en_GB-cori-high     # any of 38 English voices, and more besides
+JANET_PIPER_SPEED=0.85                # duration multiplier — LOWER IS FASTER
+JANET_TTS=espeak                      # force the old robotic voice; skips Piper entirely
+```
+
+List what's available (run it with no arguments):
+
+```bash
+./venv/bin/python -m piper.download_voices | grep '^en_'
+```
+
+`JANET_PIPER_SPEED` rescales predicted phoneme durations *before* the vocoder
+runs, so it changes pacing without touching pitch or timbre — not the same thing
+as speeding up a finished recording.
+
+If the voice model can't be loaded, JANET falls back to espeak-ng and says so
+loudly, once. A silent fallback would look like "Piper is installed but sounds
+exactly like espeak", which is a miserable thing to debug.
 
 ## Checking it still works
 
@@ -647,4 +683,4 @@ lists exactly what's absent and what to do about each.
 
 ## Target stack
 
-Whisper (STT, `small`, English-forced and vocabulary-primed) · Silero VAD · DistilBERT intent classifier · a zero-shot NLI addressing gate (DeBERTa-v3-large) · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (planned). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
+Whisper (STT, `small`, English-forced and vocabulary-primed) · Silero VAD · DistilBERT intent classifier · a zero-shot NLI addressing gate (DeBERTa-v3-large) · a local LLM as the voice (Qwen3 14B via llama.cpp or Ollama) · Piper TTS (`en_US-amy-medium`, on CPU). Core speech and reasoning are entirely on-device; only the optional calendar/weather/smart-home/email integrations touch the network, and each has a local or self-hostable option.
