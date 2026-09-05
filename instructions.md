@@ -316,9 +316,10 @@ because they look wrong in opposite directions:
   has been dormant since JANET became always-listening and nothing imports *it*.
   It's pinned so the file still loads. Delete both together if you want it gone.
 
-- **`opencv-python`** — the one forward-looking pin kept on purpose: vision is
-  being tested right now. `src/vision/` is still empty, so expect `cv2` imports
-  to land there shortly.
+- **`opencv-python`** — the one forward-looking pin, kept on purpose: vision is
+  being tested right now, but that work is **gitignored**, so it isn't in your
+  clone and nothing you can see imports `cv2`. Install it anyway — it's what the
+  next feature is built on.
 
 ---
 

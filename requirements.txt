@@ -52,8 +52,10 @@ httplib2==0.32.0                    # arrives via the client above, but pinned b
                                     # google_calendar_source.py imports it directly for
                                     # httplib2.HttpLib2Error — same reasoning as sympy below.
 
-# --- Vision (src/vision) ---
-# Kept on purpose while vision is being tested right now(currently gitignored).
+# --- Vision ---
+# Kept on purpose: vision is being tested right now, but that work is currently
+# gitignored, so it isn't in the repo and nothing you can see here imports cv2.
+# Install it anyway — it's what the next feature is built on.
 opencv-python==4.13.0.92
 
 # --- Utilities ---
