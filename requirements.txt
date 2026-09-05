@@ -54,7 +54,6 @@ httplib2==0.32.0                    # arrives via the client above, but pinned b
 
 # --- Vision (src/vision) ---
 # Kept on purpose while vision is being tested right now(currently gitignored).
-# src/vision/ is still empty; expect cv2 imports to land there shortly.
 opencv-python==4.13.0.92
 
 # --- Utilities ---
