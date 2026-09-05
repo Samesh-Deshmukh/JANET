@@ -53,8 +53,7 @@ httplib2==0.32.0                    # arrives via the client above, but pinned b
                                     # httplib2.HttpLib2Error — same reasoning as sympy below.
 
 # --- Vision (src/vision) ---
-# Kept on purpose while vision is being tested right now — this is the one
-# forward-looking pin that survives, because it is about to be imported.
+# Kept on purpose while vision is being tested right now.
 # src/vision/ is still empty; expect cv2 imports to land there shortly.
 opencv-python==4.13.0.92
 
