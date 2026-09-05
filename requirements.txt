@@ -10,22 +10,26 @@ torch==2.11.0+cu128
 openai-whisper==20250625
 silero-vad==5.1.2        # LSTM voice-activity detection; model caches locally after first run
 
-# --- Audio I/O & text-to-speech ---
+# --- Audio I/O ---
+# Capture is PyAudio and nothing else. Text-to-speech has no Python package:
+# audio/tts.py shells out to the espeak-ng and paplay SYSTEM binaries, which
+# are installed by your package manager, not by pip.
 PyAudio==0.2.14
-sounddevice==0.5.5
-wavio==0.0.9
-pyttsx3==2.99            # Linux TTS also needs the system package: espeak-ng
-# NOTE: as of Block 2 (always-listening VAD) capture no longer uses push-to-talk.
-# keyboard/pynput remain legacy/unused; evdev + utils/hotkey.py are kept but dormant.
-keyboard==0.13.5         # legacy push-to-talk (unused since Block 2); needed root on Linux
-pynput==1.8.2            # legacy root-free alternative to `keyboard` under X11 (unused since Block 2)
+
+# --- Push-to-talk (dormant) ---
+# utils/hotkey.py has imported evdev since before Block 2 made JANET
+# always-listening. Nothing imports hotkey.py any more, so this is dead weight —
+# but it is a real import, so removing the pin breaks that file rather than
+# merely shrinking the install. Delete both together if you want it gone.
+evdev==1.9.3
 
 # --- ML / data ---
 numpy==2.2.6
-pandas==2.3.3
-scipy==1.15.3
-scikit-learn==1.7.2
-matplotlib==3.10.5
+scipy==1.15.3            # resample_poly for the 44.1kHz mic fallback (audio/audio.py, audio/vad.py)
+scikit-learn==1.7.2      # metrics + the confusion matrix in intent/train.py
+matplotlib==3.10.5       # NOT unused: scikit-learn's ConfusionMatrixDisplay draws through
+                         # matplotlib but only declares it an optional extra, so intent/train.py
+                         # would crash on savefig() after the fine-tune had already run.
 transformers==5.2.0
 accelerate==1.14.0       # required by the HuggingFace Trainer for DistilBERT fine-tuning (intent/train.py)
 
@@ -41,35 +45,50 @@ caldav==3.2.1            # CalDAV client; pulls in icalendar + vobject
 icalendar==7.2.2         # imported directly for VEVENT parsing
 
 # --- Calendar integration (Google Calendar API v3) ---
-google-api-python-client==2.198.0   # the calendar v3 client (pulls in httplib2)
+google-api-python-client==2.198.0   # the calendar v3 client
 google-auth-oauthlib==1.4.0         # the one-time installed-app OAuth consent flow
 google-auth-httplib2==0.4.0         # glues google-auth credentials onto httplib2
+httplib2==0.32.0                    # arrives via the client above, but pinned because
+                                    # google_calendar_source.py imports it directly for
+                                    # httplib2.HttpLib2Error — same reasoning as sympy below.
 
-# --- Vision (planned: src/vision) ---
+# --- Vision (src/vision) ---
+# Kept on purpose while vision is being tested right now — this is the one
+# forward-looking pin that survives, because it is about to be imported.
+# src/vision/ is still empty; expect cv2 imports to land there shortly.
 opencv-python==4.13.0.92
-
-# --- Hardware integrations (planned: src/integrations, Arduino) ---
-pyFirmata==1.1.0
-pyserial==3.5
 
 # --- Utilities ---
 python-dotenv==1.2.2
-PyYAML==6.0.3
 requests==2.33.0
-rich==14.3.3
-typer==0.24.0
-tqdm==4.67.3
-psutil==7.0.0
-screeninfo==0.8.1
-
-# Removed when moving from Windows to Linux:
-#   pyinput      - depends on Windows-only pywin32 (broke the whole install); the
-#                  package you actually import is `pynput` (above), not `pyinput`.
-#   PyGetWindow  - Windows/macOS window management; raises NotImplementedError on Linux.
-#   PyRect       - only a dependency of PyGetWindow.
-evdev==1.9.3
 
 # Exact maths for the CALC intent (ai_core/mathsolve.py). Already present as a
 # torch dependency, but listed explicitly because JANET imports it directly —
 # relying on another package to keep pulling it in is how installs break later.
 sympy==1.14.0
+
+# --- Removed, and why (so nobody re-adds them by reflex) ---
+# Audited 2026-09-05 against every `import` in src/ and tools/. The rule used:
+# pin what JANET imports, plus what a dependency needs but will not install for
+# itself (matplotlib, accelerate). Everything below was neither.
+#
+#   keyboard, pynput  - legacy push-to-talk, zero imports since Block 2. (evdev
+#                       stayed only because utils/hotkey.py still imports it.)
+#   pyttsx3           - superseded by the direct espeak-ng call in audio/tts.py.
+#   sounddevice,      - never imported; PyAudio does capture and audio stays in
+#   wavio               memory as a NumPy array rather than going via a wav file.
+#   pandas            - never imported; intent/dataset.py reads plain text files.
+#   tqdm              - never imported; transformers pulls in its own copy, so
+#                       pinning it here only constrains a version JANET doesn't own.
+#   rich, typer       - never imported; JANET's CLI surface is plain print().
+#   PyYAML            - never imported; config is .env via python-dotenv.
+#   psutil,           - never imported; leftovers from an earlier system-status
+#   screeninfo          and screen-geometry idea that Linux never needed.
+#   pyFirmata,        - Arduino placeholders for hardware work that has no code
+#   pyserial            yet. Re-add them the same day something imports them.
+#
+# Earlier removals, from the Windows -> Linux move:
+#   pyinput      - depends on Windows-only pywin32 (broke the whole install); the
+#                  package you actually import is `pynput`, not `pyinput`.
+#   PyGetWindow  - Windows/macOS window management; raises NotImplementedError on Linux.
+#   PyRect       - only a dependency of PyGetWindow.
