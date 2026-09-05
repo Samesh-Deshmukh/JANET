@@ -435,6 +435,7 @@ JANET_BARGE_IN=1 python main.py
 export JANET_CALENDAR=demo JANET_WEATHER=demo JANET_SMART_HOME=demo JANET_EMAIL=demo
 ./venv/bin/python tools/smoke.py        # 30 checks, ~1 min — the fast gate
 ./venv/bin/python tools/full_check.py   # 69 checks — every intent, gate and guard
+./venv/bin/python tools/smart_home_check.py   # 20 checks — the SMART_HOME path alone
 ```
 
 `full_check.py` covers all twelve intents, the maths solver and its blocked
@@ -442,6 +443,14 @@ attack surface, the acting path, the honesty guard, ambient rejection, the
 confirmation vocabulary, calendar writes end to end, persistence across a
 restart, the speech thread, agent containment, and what happens when the model
 is unreachable.
+
+`smart_home_check.py` goes deep on one feature instead of broad across all of
+them: every switching phrasing, the state actually flipping and staying flipped,
+device-name matching, and the domain exclusions — against a simulated Home
+Assistant payload, so it needs no hub and no bulbs. **It currently exits 1 on
+purpose:** one check fails because asking for a device that doesn't exist
+switches on a real one (`match_device` lets a generic word like "lights" carry
+the match). The fix is deliberately held until there's hardware to verify it on.
 
 ## Integrations
 
@@ -609,6 +618,7 @@ data/
 tools/
   smoke.py           30 checks over the real pipeline — the fast gate
   full_check.py      69 checks — every intent, gate and guard
+  smart_home_check.py  20 checks on SMART_HOME alone (demo backend, no bulbs)
 instructions.md      full setup guide
 .env.example         every setting, documented inline
 ```
